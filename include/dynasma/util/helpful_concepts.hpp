@@ -29,6 +29,12 @@ concept KeyComparable = requires(T l, T r) {
 template <typename T>
 concept KeyUsable = Hashable<T> || KeyComparable<T>;
 
+/**
+ * @brief Whether it is const qualified
+ */
+template <typename T>
+concept ConstQualified = std::same_as<T, std::remove_const_t<T>>;
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H
