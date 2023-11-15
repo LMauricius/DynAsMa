@@ -1,2 +1,2 @@
-# DynaReMa
-A C++ dynamic resource management library
+# DynAsMa
+A C++ dynamic asset management library
