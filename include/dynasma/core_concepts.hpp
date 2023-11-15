@@ -2,7 +2,7 @@
 #ifndef INCLUDED_DYNASMA_CONCEPTS_H
 #define INCLUDED_DYNASMA_CONCEPTS_H
 
-#include "util/helpful_concepts.hpp"
+#include "dynasma/util/helpful_concepts.hpp"
 
 #include <concepts>
 #include <functional>
