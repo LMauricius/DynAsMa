@@ -85,6 +85,16 @@ concept AllocatorLike =
         { a.deallocate(p, n) } -> std::same_as<void>;
     };
 
+template <class A, typename T = A::value_type,
+          typename pointer = std::allocator_traits<A>::pointer,
+          typename const_void_pointer =
+              std::allocator_traits<A>::const_void_pointer,
+          typename size_type = std::allocator_traits<A>::size_type>
+concept AllocatorWLocality =
+    AllocatorLike<A> && requires(A a, const_void_pointer cvp, size_type n) {
+        { a.allocate(n, cvp) } -> std::same_as<pointer>;
+    };
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H
