@@ -6,14 +6,43 @@
 
 namespace dynasma {
 template <AssetLike Asset> class ReferenceManager {
+    std::size_t m_strongcount;
+    std::size_t m_weakcount;
+    Asset *p_asset;
+
+  protected:
+    virtual Asset &build_impl() = 0;
+    virtual void destroy_impl() = 0;
+    virtual void forget_impl() = 0;
+
   public:
-    virtual ~ReferenceManager() = 0;
+    ReferenceManager(){};
+    virtual ~ReferenceManager()
+        : m_strongcount(0), m_weakcount(0), p_asset(nullptr){};
 
-    virtual Asset &hold() = 0;
-    virtual void release() = 0;
+    Asset &hold() {
+        if (m_strongcount == 0) {
+            p_asset = build_impl();
+        }
+        m_strongcount++;
+        return p_asset;
+    }
+    void release() {
+        m_strongcount--;
+        if (m_strongcount == 0) {
+            destroy_impl(p_asset);
+            p_asset = nullptr;
+        }
+    }
+    Asset *p_get() { return p_asset; }
 
-    virtual void weak_hold() = 0;
-    virtual void weak_release() = 0;
+    void weak_hold() { m_weakcount++; }
+    void weak_release() {
+        m_weakcount--;
+        if (m_weakcount == 0 && m_strongcount == 0) {
+            forget_impl();
+        }
+    }
 };
 } // namespace dynasma
 
