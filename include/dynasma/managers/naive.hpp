@@ -24,10 +24,10 @@ namespace dynasma {
  */
 template <SeedLike Seed, AllocatorLike Alloc>
 class NaiveManager : public AbstractManager<Seed::Asset> {
-    class ProxyReferenceManager : public ReferenceManager<Seed::Asset> {
+    class ProxyRefCtr : public ReferenceCounter<Seed::Asset> {
         Seed m_seed;
         NaiveManager &m_manager;
-        std::list<ProxyReferenceManager>::iterator m_it;
+        std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         Seed::Asset &build_impl() override {
@@ -45,16 +45,14 @@ class NaiveManager : public AbstractManager<Seed::Asset> {
         }
 
       public:
-        ProxyReferenceManager(Seed &&seed, NaiveManager &manager)
+        ProxyRefCtr(Seed &&seed, NaiveManager &manager)
             : m_seed(seed), m_it(), m_manager(manager) {}
 
-        void setSelfIterator(std::list<ProxyReferenceManager>::iterator it) {
-            m_it = it;
-        }
+        void setSelfIterator(std::list<ProxyRefCtr>::iterator it) { m_it = it; }
     };
 
     [[no_unique_address, msvc::no_unique_address]] Alloc m_allocator;
-    std::list<ProxyReferenceManager> m_seed_registry;
+    std::list<ProxyRefCtr> m_seed_registry;
 
   public:
     NaiveManager(const NaiveManager &) = delete;
