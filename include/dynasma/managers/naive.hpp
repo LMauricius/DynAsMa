@@ -22,7 +22,8 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SeedLike Seed, AllocatorLike Alloc> class NaiveManager : {
+template <SeedLike Seed, AllocatorLike Alloc>
+class NaiveManager : public AbstractManager<Seed::Asset> {
     class ProxyReferenceManager : public ReferenceManager<Seed::Asset> {
         Seed m_seed;
         NaiveManager &m_manager;
