@@ -5,7 +5,7 @@
 #include "dynasma/core_concepts.hpp"
 
 namespace dynasma {
-template <AssetLike Asset> class ReferenceManager {
+template <AssetLike Asset> class ReferenceCounter {
     std::size_t m_strongcount;
     std::size_t m_weakcount;
     Asset *p_asset;
@@ -16,8 +16,8 @@ template <AssetLike Asset> class ReferenceManager {
     virtual void forget_impl() = 0;
 
   public:
-    ReferenceManager(){};
-    virtual ~ReferenceManager()
+    ReferenceCounter(){};
+    virtual ~ReferenceCounter()
         : m_strongcount(0), m_weakcount(0), p_asset(nullptr){};
 
     Asset &hold() {

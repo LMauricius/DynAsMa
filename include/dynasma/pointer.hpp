@@ -20,7 +20,7 @@ template <AssetLike Asset> class WeakPtr {
 
     using DecAsset = std::decay_t<Asset>;
     using MutAsset = std::remove_const_t<Asset>;
-    using Manager = ReferenceManager<DecAsset>;
+    using Manager = ReferenceCounter<DecAsset>;
 
     Manager &m_p_manager;
 
@@ -109,7 +109,7 @@ template <AssetLike Asset> class StrongPtr {
 
     using DecAsset = std::decay_t<Asset>;
     using MutAsset = std::remove_const_t<Asset>;
-    using Manager = ReferenceManager<DecAsset>;
+    using Manager = ReferenceCounter<DecAsset>;
 
     Manager &m_p_manager;
     Asset &m_p_asset;
