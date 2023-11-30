@@ -8,11 +8,12 @@ namespace dynasma {
 template <AssetLike Asset> class ReferenceCounter {
     std::size_t m_strongcount;
     std::size_t m_weakcount;
-    Asset *p_asset;
 
   protected:
-    virtual Asset &build_impl() = 0;
-    virtual void destroy_impl() = 0;
+    Asset *p_asset;
+
+    virtual void ensure_loaded_impl() = 0;
+    virtual void allow_unload_impl() = 0;
     virtual void forget_impl() = 0;
 
   public:
@@ -22,7 +23,7 @@ template <AssetLike Asset> class ReferenceCounter {
 
     Asset &hold() {
         if (m_strongcount == 0) {
-            p_asset = build_impl();
+            p_asset = ensure_loaded_impl();
         }
         m_strongcount++;
         return p_asset;
@@ -30,8 +31,7 @@ template <AssetLike Asset> class ReferenceCounter {
     void release() {
         m_strongcount--;
         if (m_strongcount == 0) {
-            destroy_impl(p_asset);
-            p_asset = nullptr;
+            allow_unload_impl(p_asset);
         }
     }
     Asset *p_get() { return p_asset; }

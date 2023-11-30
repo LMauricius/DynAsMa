@@ -30,15 +30,15 @@ class NaiveManager : public AbstractManager<Seed::Asset> {
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
-        Seed::Asset &build_impl() override {
-            Seed::Asset *p = Alloc::allocate(1);
-            std::visit([p](const auto &arg) { new (p) Seed::Asset(arg); },
+        void ensure_loaded_impl() override {
+            p_asset = Alloc::allocate(1);
+            std::visit([p](const auto &arg) { new (p_asset) Seed::Asset(arg); },
                        m_seed.kernel);
-            return p;
         }
-        void destroy_impl() override {
-            delete (p_get())Seed::Asset;
+        void allow_unload_impl() override {
+            p_asset->~Seed::Asset();
             Alloc::deallocate(p_get(), 1);
+            p_asset = nullptr;
         }
         void forget_impl() override {
             m_manager.m_seed_registry.erase(m_it); // deletes this
