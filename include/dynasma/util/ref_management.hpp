@@ -41,7 +41,7 @@ template <AssetLike Asset> class ReferenceCounter {
      */
     Asset &hold() {
         if (m_strongcount == 0) {
-            p_asset = ensure_loaded_impl();
+            ensure_loaded_impl();
         }
         m_strongcount++;
         return p_asset;
@@ -54,6 +54,10 @@ template <AssetLike Asset> class ReferenceCounter {
         m_strongcount--;
         if (m_strongcount == 0) {
             allow_unload_impl(p_asset);
+
+            if (m_weakcount == 0) {
+                forget_impl();
+            }
         }
     }
     /**
