@@ -23,40 +23,47 @@ namespace dynasma {
  * instances of the Seed::Asset
  */
 template <SeedLike Seed, AllocatorLike Alloc>
-class BasicManager : public AbstractManager<Seed::Asset> {
-    class ProxyRefCtr : public ReferenceCounter<Seed::Asset> {
+class BasicManager : public AbstractManager<Seed> {
+    class ProxyRefCtr : public ReferenceCounter<typename Seed::Asset> {
         Seed m_seed;
         BasicManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         void ensure_loaded_impl() override {
-            if (p_asset == nullptr) {
+            if (this->p_asset == nullptr) {
                 // create new
-                p_asset = Alloc::allocate(1);
+                this->p_asset = m_manager.m_allocator.allocate(1);
                 std::visit(
-                    [p](const auto &arg) { new (p_asset) Seed::Asset(arg); },
-                    m_seed.kernel);
+                    [this](const auto &arg) {
+                        new (this->p_asset) typename Seed::Asset(arg);
+                    },
+                    this->m_seed.kernel);
 
                 // move from unloaded to used
-                m_manager.m_used_registry.splice(m_it,
-                                                 m_manager.m_unloaded_registry);
+                this->m_manager.m_used_registry.splice(
+                    m_it, this->m_manager.m_unloaded_registry);
             } else {
                 // move from cached to used
-                m_manager.m_used_registry.splice(m_it,
-                                                 m_manager.m_cached_registry);
+                this->m_manager.m_used_registry.splice(
+                    m_it, this->m_manager.m_cached_registry);
             }
         }
         void allow_unload_impl() override {
             // move from used to cached
-            m_manager.m_cached_registry.splice(m_manager.m_used_registry, m_it);
+            this->m_manager.m_cached_registry.splice(
+                m_it, this->m_manager.m_used_registry);
         }
         void forget_impl() override {
-            if (p_asset != nullptr) {
-                unload();
+            if (this->p_asset != nullptr) {
+                this->unload();
             }
             m_manager.m_unloaded_registry.erase(m_it); // deletes this
         }
+
+      public:
+        ProxyRefCtr(Seed &&seed, BasicManager &manager)
+            : m_seed(seed), m_it(), m_manager(manager) {}
 
         /**
          * Unloads the asset and moves it from the cached registry to the
@@ -64,20 +71,16 @@ class BasicManager : public AbstractManager<Seed::Asset> {
          *
          * @throws None
          */
-        void unload() override {
+        void unload() {
             // unload
-            p_asset->~Seed::Asset();
-            Alloc::deallocate(p_asset, 1);
-            p_asset = nullptr;
+            this->p_asset->Seed::Asset::~Asset();
+            m_manager.m_allocator.deallocate(this->p_asset, 1);
+            this->p_asset = nullptr;
 
             // move from cached to unloaded
-            m_manager.m_unloaded_registry.splice(m_manager.m_cached_registry,
-                                                 m_it);
+            m_manager.m_unloaded_registry.splice(m_it,
+                                                 m_manager.m_cached_registry);
         }
-
-      public:
-        ProxyRefCtr(Seed &&seed, BasicManager &manager)
-            : m_seed(seed), m_p_cur_list(), m_it(), m_manager(manager) {}
 
         void setSelfRegistryPos(std::list<ProxyRefCtr> *p_cur_list,
                                 std::list<ProxyRefCtr>::iterator it) {
@@ -95,33 +98,30 @@ class BasicManager : public AbstractManager<Seed::Asset> {
   public:
     BasicManager(const BasicManager &) = delete;
     BasicManager(BasicManager &&) = delete;
-    operator=(const BasicManager &) = delete;
-    operator=(BasicManager &&) = delete;
+    BasicManager &operator=(const BasicManager &) = delete;
+    BasicManager &operator=(BasicManager &&) = delete;
 
     BasicManager()
-        requires std::default_constructible<Alloc>
-        : m_alloc(){} = delete;
+        requires std::default_initializable<Alloc>
+        : m_allocator(){};
     BasicManager(const Alloc &a) : m_allocator(a) {}
     BasicManager(Alloc &&a) : m_allocator(std::move(a)) {}
     ~BasicManager() = default;
 
-    WeakPtr<Seed::Asset> register_asset(Seed &&seed) override {
+    WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) override {
         m_unloaded_registry.emplace_front(std::move(seed), *this);
         m_unloaded_registry.front().setSelfRegistryPos(
             &m_unloaded_registry, m_unloaded_registry.begin());
-        return WeakPtr<Seed::Asset>(m_unloaded_registry.front())
+        return WeakPtr<typename Seed::Asset>(m_unloaded_registry.front());
     }
     void clean(std::size_t bytenum) override {
         /*
         Unloads the oldest unloadable assets first
         */
         std::size_t bFreed = 0;
-        for (auto &refCtr : m_unloaded_registry) {
-            refCtr.unload();
-            bFreed += refCtr.p_get()->memory_cost();
-            if (bFreed >= bytenum) {
-                break;
-            }
+        while (bFreed < bytenum && !m_cached_registry.empty()) {
+            bFreed += m_cached_registry.front().p_get()->memory_cost();
+            m_cached_registry.front().unload();
         }
     }
 };

@@ -11,7 +11,7 @@ namespace dynasma {
 template <SeedLike Seed> class AbstractManager {
 
   public:
-    virtual ~AbstractManager() = 0 {};
+    virtual ~AbstractManager(){};
 
     /**
      * @brief Registers a seed for constructing an instance of Seed::Asset
@@ -20,7 +20,7 @@ template <SeedLike Seed> class AbstractManager {
      * @returns A WeakPtr to the (to-be-)constructed asset. Cast it to StrongPtr
      * to retrieve the asset
      */
-    virtual WeakPtr<Seed::Asset> register_asset(Seed &&seed) = 0;
+    virtual WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) = 0;
 
     /**
      * @brief Attempts to unload not-strongly-referenced assets to free memory
