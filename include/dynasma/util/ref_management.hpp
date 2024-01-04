@@ -25,6 +25,7 @@ template <AssetLike Asset> class ReferenceCounter {
     virtual void allow_unload_impl() = 0;
     /**
      * @brief Allows `this` to be deleted
+     * @note Called only while the asset is allowed to be unloaded
      * @note this instance should not be referenced after this call
      */
     virtual void forget_impl() = 0;
