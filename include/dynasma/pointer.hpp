@@ -16,19 +16,20 @@ template <AssetLike Asset> class StrongPtr;
  * @note must be cast to a StrongPtr to access the asset.
  */
 template <AssetLike Asset> class WeakPtr {
-    template <typename T> friend class StrongPtr<T>;
-
     using DecAsset = std::decay_t<Asset>;
     using MutAsset = std::remove_const_t<Asset>;
     using Manager = ReferenceCounter<DecAsset>;
 
-    Manager &m_p_manager;
+    friend class StrongPtr<DecAsset>;
+    friend class StrongPtr<MutAsset>;
+
+    Manager *m_p_manager;
 
   public:
-    WeakPtr() = delete;
+    WeakPtr() : m_p_manager(nullptr) {}
     // standalone
     WeakPtr(Manager &manager) : m_p_manager(&manager) {
-        manager->weak_hold();
+        manager.weak_hold();
     } // WeakPtr<Asset> &
     WeakPtr(const WeakPtr<Asset> &other) : WeakPtr(*other.m_p_manager) {}
     // WeakPtr<MutAsset> &
@@ -53,7 +54,7 @@ template <AssetLike Asset> class WeakPtr {
 
     ~WeakPtr() {
         if (m_p_manager)
-            m_p_manager.weak_release();
+            m_p_manager->weak_release();
     }
 
     // WeakPtr&<Asset> &
@@ -85,7 +86,7 @@ template <AssetLike Asset> class WeakPtr {
     // WeakPtr<Asset>&&
     WeakPtr &operator=(WeakPtr<Asset> &&other) {
         m_p_manager = other.m_p_manager;
-        other->m_p_manager = nullptr;
+        other.m_p_manager = nullptr;
 
         return *this;
     }
@@ -105,20 +106,21 @@ template <AssetLike Asset> class WeakPtr {
  * @note Can be used like a pointer to the asset.
  */
 template <AssetLike Asset> class StrongPtr {
-    template <typename T> friend class WeakPtr<T>;
-
     using DecAsset = std::decay_t<Asset>;
     using MutAsset = std::remove_const_t<Asset>;
     using Manager = ReferenceCounter<DecAsset>;
 
-    Manager &m_p_manager;
-    Asset &m_p_asset;
+    friend class WeakPtr<DecAsset>;
+    friend class WeakPtr<MutAsset>;
+
+    Manager *m_p_manager;
+    Asset *m_p_asset;
 
   public:
-    StrongPtr() = delete;
+    StrongPtr() : m_p_manager(nullptr) {}
     // standalone
     StrongPtr(Manager &manager)
-        : m_p_manager(&manager), m_p_asset(&manager->hold()) {}
+        : m_p_manager(&manager), m_p_asset(&manager.hold()) {}
     // StrongPtr<Asset> &
     StrongPtr(const StrongPtr<Asset> &other) : StrongPtr(*other.m_p_manager) {}
     // StrongPtr<MutAsset> &
@@ -144,7 +146,7 @@ template <AssetLike Asset> class StrongPtr {
 
     ~StrongPtr() {
         if (m_p_manager)
-            m_p_manager.release();
+            m_p_manager->release();
     }
 
     // StrongPtr&<Asset> &

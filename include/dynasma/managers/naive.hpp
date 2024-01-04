@@ -23,22 +23,25 @@ namespace dynasma {
  * instances of the Seed::Asset
  */
 template <SeedLike Seed, AllocatorLike Alloc>
-class NaiveManager : public AbstractManager<Seed::Asset> {
-    class ProxyRefCtr : public ReferenceCounter<Seed::Asset> {
+class NaiveManager : public AbstractManager<Seed> {
+    class ProxyRefCtr : public ReferenceCounter<typename Seed::Asset> {
         Seed m_seed;
         NaiveManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         void ensure_loaded_impl() override {
-            p_asset = Alloc::allocate(1);
-            std::visit([p](const auto &arg) { new (p_asset) Seed::Asset(arg); },
-                       m_seed.kernel);
+            this->p_asset = m_manager.m_allocator.allocate(1);
+            std::visit(
+                [this](const auto &arg) {
+                    new (this->p_asset) Seed::Asset(arg);
+                },
+                m_seed.kernel);
         }
         void allow_unload_impl() override {
-            p_asset->~Seed::Asset();
-            Alloc::deallocate(p_get(), 1);
-            p_asset = nullptr;
+            this->p_asset->Seed::Asset::~Asset();
+            m_manager.m_allocator.deallocate(this->p_asset, 1);
+            this->p_asset = nullptr;
         }
         void forget_impl() override {
             m_manager.m_seed_registry.erase(m_it); // deletes this
@@ -48,7 +51,9 @@ class NaiveManager : public AbstractManager<Seed::Asset> {
         ProxyRefCtr(Seed &&seed, NaiveManager &manager)
             : m_seed(seed), m_it(), m_manager(manager) {}
 
-        void setSelfIterator(std::list<ProxyRefCtr>::iterator it) { m_it = it; }
+        void setSelfRegistryPos(std::list<ProxyRefCtr>::iterator it) {
+            m_it = it;
+        }
     };
 
     [[no_unique_address, msvc::no_unique_address]] Alloc m_allocator;
@@ -57,21 +62,22 @@ class NaiveManager : public AbstractManager<Seed::Asset> {
   public:
     NaiveManager(const NaiveManager &) = delete;
     NaiveManager(NaiveManager &&) = delete;
-    operator=(const NaiveManager &) = delete;
-    operator=(NaiveManager &&) = delete;
+    NaiveManager &operator=(const NaiveManager &) = delete;
+    NaiveManager &operator=(NaiveManager &&) = delete;
 
     NaiveManager()
-        requires std::default_constructible<Alloc>
-        : m_alloc(){} = delete;
+        requires std::default_initializable<Alloc>
+        : m_allocator(){};
     NaiveManager(const Alloc &a) : m_allocator(a) {}
     NaiveManager(Alloc &&a) : m_allocator(std::move(a)) {}
     ~NaiveManager() = default;
 
-    WeakPtr<Seed::Asset> register_asset(Seed &&seed) override {
+    using AbstractManager<Seed>::register_asset;
+
+    WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) override {
         m_seed_registry.emplace_front(std::move(seed), *this);
-        m_seed_registry.front().setSelfRegistryPos(&m_seed_registry,
-                                                   m_seed_registry.begin());
-        return WeakPtr<Seed::Asset>(m_unloaded_registry.front())
+        m_seed_registry.front().setSelfRegistryPos(m_seed_registry.begin());
+        return WeakPtr<typename Seed::Asset>(m_seed_registry.front());
     }
     void clean(std::size_t bytenum) override {
         // do nothing; cleans itself automatically

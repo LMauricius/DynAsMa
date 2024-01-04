@@ -33,13 +33,13 @@ concept KeyUsable = Hashable<T> || KeyComparable<T>;
  * @brief Whether it is const qualified
  */
 template <typename T>
-concept ConstQualified = std::same_as<T, std::remove_const_t<T>>;
+concept ConstQualified = std::same_as<T, const T>;
 
 /**
  * @brief Whether it is volatile qualified
  */
 template <typename T>
-concept VolatileQualified = std::same_as<T, std::remove_volatile_t<T>>;
+concept VolatileQualified = std::same_as<T, volatile T>;
 
 /**
  * @brief Whether it is cv qualified
