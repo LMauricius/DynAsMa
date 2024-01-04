@@ -41,7 +41,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking strong reference...\n";
-        dynasma::StrongPtr<TestAsset> strongPtr = weakPtr1;
+        auto strongPtr = weakPtr1.getLoaded();
         std::cout << "    Strong reference taken!\n";
 
         std::cout << "    Asset pointer: " << &*strongPtr << "\n";
@@ -59,7 +59,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking strong reference...\n";
-        dynasma::StrongPtr<TestAsset> strongPtr = weakPtr2;
+        auto strongPtr = weakPtr2.getLoaded();
         std::cout << "    Strong reference taken!\n";
 
         std::cout << "    Asset pointer: " << &*strongPtr << "\n";
