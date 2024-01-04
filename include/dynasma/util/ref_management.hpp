@@ -30,9 +30,8 @@ template <AssetLike Asset> class ReferenceCounter {
     virtual void forget_impl() = 0;
 
   public:
-    ReferenceCounter(){};
-    virtual ~ReferenceCounter()
-        : m_strongcount(0), m_weakcount(0), p_asset(nullptr){};
+    ReferenceCounter() : m_strongcount(0), m_weakcount(0), p_asset(nullptr){};
+    virtual ~ReferenceCounter(){};
 
     /**
      * @brief Raises the strong reference count
@@ -44,7 +43,7 @@ template <AssetLike Asset> class ReferenceCounter {
             ensure_loaded_impl();
         }
         m_strongcount++;
-        return p_asset;
+        return *p_asset;
     }
     /**
      * @brief Reduces the strong reference count
@@ -53,8 +52,7 @@ template <AssetLike Asset> class ReferenceCounter {
     void release() {
         m_strongcount--;
         if (m_strongcount == 0) {
-            allow_unload_impl(p_asset);
-
+            allow_unload_impl();
             if (m_weakcount == 0) {
                 forget_impl();
             }
