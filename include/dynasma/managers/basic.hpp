@@ -42,17 +42,20 @@ class BasicManager : public AbstractManager<Seed> {
 
                 // move from unloaded to used
                 this->m_manager.m_used_registry.splice(
-                    m_it, this->m_manager.m_unloaded_registry);
+                    this->m_manager.m_used_registry.end(),
+                    this->m_manager.m_unloaded_registry, m_it);
             } else {
                 // move from cached to used
                 this->m_manager.m_used_registry.splice(
-                    m_it, this->m_manager.m_cached_registry);
+                    this->m_manager.m_used_registry.end(),
+                    this->m_manager.m_cached_registry, m_it);
             }
         }
         void allow_unload_impl() override {
             // move from used to cached
             this->m_manager.m_cached_registry.splice(
-                m_it, this->m_manager.m_used_registry);
+                this->m_manager.m_cached_registry.end(),
+                this->m_manager.m_used_registry, m_it);
         }
         void forget_impl() override {
             if (this->p_asset != nullptr) {
@@ -78,8 +81,9 @@ class BasicManager : public AbstractManager<Seed> {
             this->p_asset = nullptr;
 
             // move from cached to unloaded
-            m_manager.m_unloaded_registry.splice(m_it,
-                                                 m_manager.m_cached_registry);
+            m_manager.m_unloaded_registry.splice(
+                m_manager.m_unloaded_registry.end(),
+                m_manager.m_cached_registry, m_it);
         }
 
         void setSelfRegistryPos(std::list<ProxyRefCtr> *p_cur_list,
@@ -107,6 +111,8 @@ class BasicManager : public AbstractManager<Seed> {
     BasicManager(const Alloc &a) : m_allocator(a) {}
     BasicManager(Alloc &&a) : m_allocator(std::move(a)) {}
     ~BasicManager() = default;
+
+    using AbstractManager<Seed>::register_asset;
 
     WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) override {
         m_unloaded_registry.emplace_front(std::move(seed), *this);

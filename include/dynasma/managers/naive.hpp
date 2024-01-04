@@ -72,6 +72,8 @@ class NaiveManager : public AbstractManager<Seed> {
     NaiveManager(Alloc &&a) : m_allocator(std::move(a)) {}
     ~NaiveManager() = default;
 
+    using AbstractManager<Seed>::register_asset;
+
     WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) override {
         m_seed_registry.emplace_front(std::move(seed), *this);
         m_seed_registry.front().setSelfRegistryPos(m_seed_registry.begin());
