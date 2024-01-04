@@ -53,6 +53,9 @@ template <AssetLike Asset> class ReferenceCounter {
         m_strongcount--;
         if (m_strongcount == 0) {
             allow_unload_impl();
+            if (m_weakcount == 0) {
+                forget_impl();
+            }
         }
     }
     /**

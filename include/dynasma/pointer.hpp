@@ -26,7 +26,7 @@ template <AssetLike Asset> class WeakPtr {
     Manager *m_p_manager;
 
   public:
-    WeakPtr() = delete;
+    WeakPtr() : m_p_manager(nullptr) {}
     // standalone
     WeakPtr(Manager &manager) : m_p_manager(&manager) {
         manager.weak_hold();
@@ -86,7 +86,7 @@ template <AssetLike Asset> class WeakPtr {
     // WeakPtr<Asset>&&
     WeakPtr &operator=(WeakPtr<Asset> &&other) {
         m_p_manager = other.m_p_manager;
-        other->m_p_manager = nullptr;
+        other.m_p_manager = nullptr;
 
         return *this;
     }
@@ -117,7 +117,7 @@ template <AssetLike Asset> class StrongPtr {
     Asset *m_p_asset;
 
   public:
-    StrongPtr() = delete;
+    StrongPtr() : m_p_manager(nullptr) {}
     // standalone
     StrongPtr(Manager &manager)
         : m_p_manager(&manager), m_p_asset(&manager.hold()) {}
