@@ -160,6 +160,17 @@ template <AssetLike Asset> class WeakPtr {
 
         return *this;
     }
+
+    /**
+     * @brief Ensures the asset is loaded before storing it into a StrongPtr
+     * @returns a StrongPtr to the asset
+     */
+    StrongPtr<Asset> getLoaded() const {
+        if (m_p_ctr)
+            return StrongPtr<Asset>(*m_p_ctr);
+        else
+            return StrongPtr<Asset>();
+    }
 };
 
 /**
