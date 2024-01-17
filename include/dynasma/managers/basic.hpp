@@ -22,21 +22,26 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SeedLike Seed, AllocatorLike Alloc>
+template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
 class BasicManager : public AbstractManager<Seed> {
-    class ProxyRefCtr : public ReferenceCounter<typename Seed::Asset> {
+
+    // reference counting response implementation
+    class ProxyRefCtr
+        : public TypeErasedReferenceCounter<typename Seed::Asset> {
         Seed m_seed;
         BasicManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         void ensure_loaded_impl() override {
-            if (this->p_asset == nullptr) {
+            if (this->p_obj == nullptr) {
                 // create new
-                this->p_asset = m_manager.m_allocator.allocate(1);
+                typename Seed::Asset *p_asset =
+                    m_manager.m_allocator.allocate(1);
+                this->p_obj = p_asset;
                 std::visit(
-                    [this](const auto &arg) {
-                        new (this->p_asset) typename Seed::Asset(arg);
+                    [p_asset](const auto &arg) {
+                        new (p_asset) typename Seed::Asset(arg);
                     },
                     this->m_seed.kernel);
 
@@ -58,7 +63,7 @@ class BasicManager : public AbstractManager<Seed> {
                 this->m_manager.m_used_registry, m_it);
         }
         void forget_impl() override {
-            if (this->p_asset != nullptr) {
+            if (this->p_obj != nullptr) {
                 this->unload();
             }
             m_manager.m_unloaded_registry.erase(m_it); // deletes this
@@ -76,9 +81,11 @@ class BasicManager : public AbstractManager<Seed> {
          */
         void unload() {
             // unload
-            this->p_asset->Seed::Asset::~Asset();
-            m_manager.m_allocator.deallocate(this->p_asset, 1);
-            this->p_asset = nullptr;
+            typename Seed::Asset &asset_casted =
+                *dynamic_cast<typename Seed::Asset *>(this->p_obj);
+            this->p_obj->~PolymorphicBase();
+            m_manager.m_allocator.deallocate(&asset_casted, 1);
+            this->p_obj = nullptr;
 
             // move from cached to unloaded
             m_manager.m_unloaded_registry.splice(
@@ -126,7 +133,9 @@ class BasicManager : public AbstractManager<Seed> {
         */
         std::size_t bFreed = 0;
         while (bFreed < bytenum && !m_cached_registry.empty()) {
-            bFreed += m_cached_registry.front().p_get()->memory_cost();
+            bFreed += dynamic_cast<typename Seed::Asset &>(
+                          *m_cached_registry.front().p_get())
+                          .memory_cost();
             m_cached_registry.front().unload();
         }
     }

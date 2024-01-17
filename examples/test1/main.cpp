@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-class TestAsset {
+class TestAsset : public dynasma::PolymorphicBase {
   public:
     TestAsset(std::string name) {
         std::cout << "--- TestAsset " << name << " constructed!" << std::endl;

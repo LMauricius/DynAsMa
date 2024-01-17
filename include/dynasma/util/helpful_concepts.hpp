@@ -50,6 +50,13 @@ template <typename T>
 concept NotCVQualified = !CVQualified<T>;
 
 /**
+ * @brief Whether type A is less or equally cv qualified than type B
+ */
+template <typename A, typename B>
+concept MoreOrEquallyCVQualified = (ConstQualified<A> || !ConstQualified<B>)&&(
+    VolatileQualified<A> || !VolatileQualified<B>);
+
+/**
  * @brief Allocator
  */
 template <class A, typename T = A::value_type,

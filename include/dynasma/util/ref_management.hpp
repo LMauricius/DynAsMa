@@ -3,14 +3,15 @@
 #define INCLUDED_DYNASMA_REF_MAN_H
 
 #include "dynasma/core_concepts.hpp"
+#include "dynasma/util/type_modification.hpp"
 
 namespace dynasma {
-template <AssetLike Asset> class ReferenceCounter {
+template <class T> class ReferenceCounter {
     std::size_t m_strongcount;
     std::size_t m_weakcount;
 
   protected:
-    Asset *p_asset;
+    T *p_obj;
 
     /**
      * @brief Ensures that the asset is loaded and its pointer is stored in
@@ -31,7 +32,7 @@ template <AssetLike Asset> class ReferenceCounter {
     virtual void forget_impl() = 0;
 
   public:
-    ReferenceCounter() : m_strongcount(0), m_weakcount(0), p_asset(nullptr){};
+    ReferenceCounter() : m_strongcount(0), m_weakcount(0), p_obj(nullptr){};
     virtual ~ReferenceCounter(){};
 
     /**
@@ -39,12 +40,12 @@ template <AssetLike Asset> class ReferenceCounter {
      * @note If the asset is not loaded, it will be loaded
      * @returns reference to the loaded asset
      */
-    Asset &hold() {
+    T &hold() {
         if (m_strongcount == 0) {
             ensure_loaded_impl();
         }
         m_strongcount++;
-        return *p_asset;
+        return *p_obj;
     }
     /**
      * @brief Reduces the strong reference count
@@ -63,7 +64,7 @@ template <AssetLike Asset> class ReferenceCounter {
      * @returns a pointer to the loaded asset or nullptr if the asset is
      * not loaded
      */
-    Asset *p_get() { return p_asset; }
+    T *p_get() { return p_obj; }
 
     /**
      * @brief Increases the weak reference count

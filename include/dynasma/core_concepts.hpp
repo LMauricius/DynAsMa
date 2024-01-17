@@ -2,6 +2,7 @@
 #ifndef INCLUDED_DYNASMA_CONCEPTS_H
 #define INCLUDED_DYNASMA_CONCEPTS_H
 
+#include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 
 #include <concepts>
@@ -14,7 +15,7 @@ namespace dynasma {
  * An asset, constructible by an asset manager, from a seed kernel.
  * Must have a method memory_cost() returning the size (in bytes) in memory.
  * @example @code
- *  struct MyAsset {
+ *  struct MyAsset: public PolymorphicBase {
  *      MyAsset(std::filename);
  *      MyAsset(json::object);
  *
@@ -25,9 +26,10 @@ namespace dynasma {
  * @endcode
  */
 template <typename T>
-concept AssetLike = requires(const T &a) {
-    { a.memory_cost() } -> std::convertible_to<std::size_t>;
-};
+concept AssetLike =
+    std::is_base_of<PolymorphicBase, T>::value && requires(const T &a) {
+        { a.memory_cost() } -> std::convertible_to<std::size_t>;
+    };
 
 /**
  * An asset seed, used to construct an asset.

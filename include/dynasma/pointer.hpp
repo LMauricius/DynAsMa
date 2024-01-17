@@ -3,11 +3,22 @@
 #define INCLUDED_DYNASMA_POINTER_H
 
 #include "dynasma/core_concepts.hpp"
+#include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/ref_management.hpp"
+#include "dynasma/util/type_modification.hpp"
 
 #include <type_traits>
 
 namespace dynasma {
+
+template <class To, class From>
+concept PointerCastable =
+    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
+    MoreOrEquallyCVQualified<To, From>;
+
+template <class T>
+using TypeErasedReferenceCounter =
+    ReferenceCounter<typename CopyCV<T, PolymorphicBase>::type>;
 
 template <AssetLike Asset> class StrongPtr;
 
@@ -16,12 +27,11 @@ template <AssetLike Asset> class StrongPtr;
  * @note must be cast to a StrongPtr to access the asset.
  */
 template <AssetLike Asset> class WeakPtr {
-    using DecAsset = std::decay_t<Asset>;
-    using MutAsset = std::remove_const_t<Asset>;
-    using RefCtr = ReferenceCounter<DecAsset>;
+    // type-erased reference counter.
+    using RefCtr = TypeErasedReferenceCounter<Asset>;
 
-    friend class StrongPtr<DecAsset>;
-    friend class StrongPtr<MutAsset>;
+    template <AssetLike T> friend class WeakPtr;
+    template <AssetLike T> friend class StrongPtr;
 
     RefCtr *m_p_ctr;
 
@@ -30,64 +40,44 @@ template <AssetLike Asset> class WeakPtr {
     WeakPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
+    // The ctr must produce instances derived from Asset
     WeakPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.weak_hold(); }
 
-    // Copy & Move constructors
+    // Copy & Move constructors for WeakPtr
 
     // WeakPtr<Asset> &
-    WeakPtr(const WeakPtr<Asset> &other) : WeakPtr(*other.m_p_ctr) {}
-    // WeakPtr<MutAsset> &
-    WeakPtr(const WeakPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    template <AssetLike OthersAsset>
+    WeakPtr(const WeakPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
         : WeakPtr(*other.m_p_ctr) {}
-    // WeakPtr<Asset>&&
-    WeakPtr(WeakPtr<Asset> &&other) : m_p_ctr(other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
-    // WeakPtr<MutAsset>&&
-    WeakPtr(WeakPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
+
+    // WeakPtr<Asset> &&
+    template <AssetLike OthersAsset>
+    WeakPtr(WeakPtr<OthersAsset> &&other)
+        requires PointerCastable<Asset, OthersAsset>
         : m_p_ctr(other.m_p_ctr) {
         other.m_p_ctr = nullptr;
     }
 
     // Copy & Move constructors for StrongPtr
 
-    WeakPtr(const StrongPtr<Asset> &other) : WeakPtr(*other.m_p_ctr) {}
-    WeakPtr(const StrongPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // StrongPtr<Asset> &
+    template <AssetLike OthersAsset>
+    WeakPtr(const StrongPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
         : WeakPtr(*other.m_p_ctr) {}
-    WeakPtr(StrongPtr<Asset> &&other) : WeakPtr(*other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
-    WeakPtr(StrongPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
-        : WeakPtr(*other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
 
     ~WeakPtr() {
         if (m_p_ctr)
             m_p_ctr->weak_release();
     }
 
-    // Copy & Move assignment
+    // Copy & Move assignment for WeakPtr
 
-    // WeakPtr&<Asset> &
-    WeakPtr &operator=(const WeakPtr<Asset> &other) {
-        if (m_p_ctr)
-            m_p_ctr.weak_release();
-
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_ctr.weak_take();
-
-        return *this;
-    }
-    // WeakPtr<MutAsset> &
-    WeakPtr &operator=(const WeakPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // WeakPtr<Asset> &
+    template <AssetLike OthersAsset>
+    WeakPtr &operator=(const WeakPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
             m_p_ctr.weak_release();
@@ -99,16 +89,11 @@ template <AssetLike Asset> class WeakPtr {
 
         return *this;
     }
-    // WeakPtr<Asset>&&
-    WeakPtr &operator=(WeakPtr<Asset> &&other) {
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
 
-        return *this;
-    }
-    // WeakPtr<MutAsset>&&
-    WeakPtr &operator=(WeakPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
+    // WeakPtr<Asset> &&
+    template <AssetLike OthersAsset>
+    WeakPtr &operator=(WeakPtr<OthersAsset> &&other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = nullptr;
@@ -118,21 +103,10 @@ template <AssetLike Asset> class WeakPtr {
 
     // Copy & Move assignment for StrongPtr
 
-    // WeakPtr&<Asset> &
-    WeakPtr &operator=(const StrongPtr<Asset> &other) {
-        if (m_p_ctr)
-            m_p_ctr.weak_release();
-
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_ctr.weak_take();
-
-        return *this;
-    }
-    // StrongPtr<MutAsset> &
-    WeakPtr &operator=(const StrongPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // StrongPtr<Asset> &
+    template <AssetLike OthersAsset>
+    WeakPtr &operator=(const StrongPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
             m_p_ctr.weak_release();
@@ -141,22 +115,6 @@ template <AssetLike Asset> class WeakPtr {
 
         if (m_p_ctr)
             m_p_ctr.weak_take();
-
-        return *this;
-    }
-    // StrongPtr<Asset>&&
-    WeakPtr &operator=(StrongPtr<Asset> &&other) {
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
-
-        return *this;
-    }
-    // StrongPtr<MutAsset>&&
-    WeakPtr &operator=(StrongPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
-    {
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
 
         return *this;
     }
@@ -178,12 +136,11 @@ template <AssetLike Asset> class WeakPtr {
  * @note Can be used like a pointer to the asset.
  */
 template <AssetLike Asset> class StrongPtr {
-    using DecAsset = std::decay_t<Asset>;
-    using MutAsset = std::remove_const_t<Asset>;
-    using RefCtr = ReferenceCounter<DecAsset>;
+    // type-erased reference counter.
+    using RefCtr = TypeErasedReferenceCounter<Asset>;
 
-    friend class WeakPtr<DecAsset>;
-    friend class WeakPtr<MutAsset>;
+    template <AssetLike T> friend class WeakPtr;
+    template <AssetLike T> friend class StrongPtr;
 
     RefCtr *m_p_ctr;
     Asset *m_p_asset;
@@ -193,61 +150,51 @@ template <AssetLike Asset> class StrongPtr {
     StrongPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
-    StrongPtr(RefCtr &ctr) : m_p_ctr(&ctr), m_p_asset(&ctr.hold()) {}
+    // The ctr must produce instances derived from Asset
+    StrongPtr(RefCtr &ctr)
+        : m_p_ctr(&ctr),
+          m_p_asset(
+              // assume the casting is possible, i.e. we have a valid pointer
+              // can be dereferenced -> is not nullptr
+              // this could be used to optimize for non-virtual inheritances
+              &*dynamic_cast<Asset *>(&ctr.hold())) {}
 
-    // Copy & move constructors
+    // Copy & move constructors for StrongPtr
+
     // StrongPtr<Asset> &
-    StrongPtr(const StrongPtr<Asset> &other) : StrongPtr(*other.m_p_ctr) {}
-    // StrongPtr<MutAsset> &
-    StrongPtr(const StrongPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    template <AssetLike OthersAsset>
+    StrongPtr(const StrongPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
         : StrongPtr(*other.m_p_ctr) {}
-    // StrongPtr<Asset>&&
-    StrongPtr(StrongPtr<Asset> &&other)
-        : m_p_ctr(other.m_p_ctr), m_p_asset(other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
-    // StrongPtr<MutAsset>&&
-    StrongPtr(StrongPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
-        : m_p_ctr(other.m_p_ctr), m_p_asset(other.m_p_ctr) {
+
+    // StrongPtr<Asset> &&
+    template <AssetLike OthersAsset>
+    StrongPtr(StrongPtr<OthersAsset> &&other)
+        requires PointerCastable<Asset, OthersAsset>
+        : m_p_ctr(other.m_p_ctr),
+          m_p_asset(dynamic_cast<Asset *>(other.m_p_ctr)) {
         other.m_p_ctr = nullptr;
     }
 
-    // Copy & move constructors for WeakPtr
-    StrongPtr(const WeakPtr<Asset> &other) : StrongPtr(*other.m_p_ctr) {}
-    StrongPtr(const WeakPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // Copy & move constructor for WeakPtr
+
+    // WeakPtr<Asset> &
+    template <AssetLike OthersAsset>
+    StrongPtr(const WeakPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
         : StrongPtr(*other.m_p_ctr) {}
-    StrongPtr(WeakPtr<Asset> &&other) : StrongPtr(*other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
-    StrongPtr(WeakPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
-        : StrongPtr(*other.m_p_ctr) {
-        other.m_p_ctr = nullptr;
-    }
 
     ~StrongPtr() {
         if (m_p_ctr)
             m_p_ctr->release();
     }
 
-    // StrongPtr&<Asset> &
-    StrongPtr &operator=(const StrongPtr<Asset> &other) {
-        if (m_p_ctr)
-            m_p_ctr.release();
+    // copy & move assignment for StrongPtr
 
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_asset = m_p_ctr.take();
-
-        return *this;
-    }
-    // StrongPtr<MutAsset> &
-    StrongPtr &operator=(const StrongPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // StrongPtr<Asset> &
+    template <AssetLike OthersAsset>
+    StrongPtr &operator=(const StrongPtr<OthersAsset> &other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -259,21 +206,11 @@ template <AssetLike Asset> class StrongPtr {
 
         return *this;
     }
-    // StrongPtr<Asset>&&
-    StrongPtr &operator=(StrongPtr<Asset> &&other) {
-        if (m_p_ctr)
-            m_p_ctr.release();
 
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
-
-        m_p_asset = other.m_p_asset;
-
-        return *this;
-    }
-    // StrongPtr<MutAsset>&&
-    StrongPtr &operator=(StrongPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
+    // StrongPtr<Asset> &&
+    template <AssetLike OthersAsset>
+    StrongPtr &operator=(StrongPtr<OthersAsset> &&other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -286,21 +223,12 @@ template <AssetLike Asset> class StrongPtr {
         return *this;
     }
 
-    // StrongPtr&<Asset> &
-    StrongPtr &operator=(const WeakPtr<Asset> &other) {
-        if (m_p_ctr)
-            m_p_ctr.release();
+    // Copy & move assignment for WeakPtr
 
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_asset = m_p_ctr.take();
-
-        return *this;
-    }
-    // WeakPtr<MutAsset> &
-    StrongPtr &operator=(const WeakPtr<MutAsset> &other)
-        requires ConstQualified<Asset>
+    // WeakPtr&<Asset> &
+    template <AssetLike OthersAsset>
+    StrongPtr &operator=(const WeakPtr<Asset> &other)
+        requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -309,32 +237,6 @@ template <AssetLike Asset> class StrongPtr {
 
         if (m_p_ctr)
             m_p_asset = m_p_ctr.take();
-
-        return *this;
-    }
-    // WeakPtr<Asset>&&
-    StrongPtr &operator=(WeakPtr<Asset> &&other) {
-        if (m_p_ctr)
-            m_p_ctr.release();
-
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
-
-        m_p_asset = &m_p_ctr.hold();
-
-        return *this;
-    }
-    // WeakPtr<MutAsset>&&
-    StrongPtr &operator=(WeakPtr<MutAsset> &&other)
-        requires ConstQualified<Asset>
-    {
-        if (m_p_ctr)
-            m_p_ctr.release();
-
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = nullptr;
-
-        m_p_asset = &m_p_ctr.hold();
 
         return *this;
     }

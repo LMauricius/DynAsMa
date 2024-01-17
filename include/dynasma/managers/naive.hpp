@@ -5,6 +5,7 @@
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 #include "dynasma/util/ref_management.hpp"
 
@@ -22,26 +23,30 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SeedLike Seed, AllocatorLike Alloc>
+template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
 class NaiveManager : public AbstractManager<Seed> {
-    class ProxyRefCtr : public ReferenceCounter<typename Seed::Asset> {
+
+    // reference counting response implementation
+    class ProxyRefCtr
+        : public TypeErasedReferenceCounter<typename Seed::Asset> {
         Seed m_seed;
         NaiveManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         void ensure_loaded_impl() override {
-            this->p_asset = m_manager.m_allocator.allocate(1);
+            typename Seed::Asset *p_asset = m_manager.m_allocator.allocate(1);
+            this->p_obj = p_asset;
             std::visit(
-                [this](const auto &arg) {
-                    new (this->p_asset) Seed::Asset(arg);
-                },
+                [p_asset](const auto &arg) { new (p_asset) Seed::Asset(arg); },
                 m_seed.kernel);
         }
         void allow_unload_impl() override {
-            this->p_asset->Seed::Asset::~Asset();
-            m_manager.m_allocator.deallocate(this->p_asset, 1);
-            this->p_asset = nullptr;
+            typename Seed::Asset &asset_casted =
+                *dynamic_cast<typename Seed::Asset *>(this->p_obj);
+            this->p_obj->~PolymorphicBase();
+            m_manager.m_allocator.deallocate(&asset_casted, 1);
+            this->p_obj = nullptr;
         }
         void forget_impl() override {
             m_manager.m_seed_registry.erase(m_it); // deletes this
