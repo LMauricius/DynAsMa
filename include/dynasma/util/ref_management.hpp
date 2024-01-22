@@ -16,20 +16,21 @@ template <class T> class ReferenceCounter {
     /**
      * @brief Ensures that the asset is loaded and its pointer is stored in
      * p_asset
-     * @note Called only while the asset is allowed to be unloaded
+     * @note Called only on the switch from unloadable to usable
      */
-    virtual void ensure_loaded_impl() = 0;
+    virtual void handle_usable_impl() = 0;
     /**
      * @brief Allows unloading the asset
-     * @note Called while the asset is required to be loaded
+     * @note Called only on the switch from usable to unloadable
      */
-    virtual void allow_unload_impl() = 0;
+    virtual void handle_unloadable_impl() = 0;
     /**
      * @brief Allows `this` to be deleted
-     * @note Called only while the asset is allowed to be unloaded
+     * @note Called only on the switch from unloadable to forgettable
      * @note this instance should not be referenced after this call
+     * @note this instance can be deleted by this function, or after calling it
      */
-    virtual void forget_impl() = 0;
+    virtual void handle_forgettable_impl() = 0;
 
   public:
     ReferenceCounter() : m_strongcount(0), m_weakcount(0), p_obj(nullptr){};
@@ -41,8 +42,8 @@ template <class T> class ReferenceCounter {
      * @returns reference to the loaded asset
      */
     T &hold() {
-        if (m_strongcount == 0) {
-            ensure_loaded_impl();
+        if (is_unloadable()) {
+            handle_usable_impl();
         }
         m_strongcount++;
         return *p_obj;
@@ -53,10 +54,10 @@ template <class T> class ReferenceCounter {
      */
     void release() {
         m_strongcount--;
-        if (m_strongcount == 0) {
-            allow_unload_impl();
+        if (is_unloadable()) {
+            handle_unloadable_impl();
             if (m_weakcount == 0) {
-                forget_impl();
+                handle_forgettable_impl();
             }
         }
     }
@@ -76,8 +77,8 @@ template <class T> class ReferenceCounter {
      */
     void weak_release() {
         m_weakcount--;
-        if (m_weakcount == 0 && m_strongcount == 0) {
-            forget_impl();
+        if (is_forgettable()) {
+            handle_forgettable_impl();
         }
     }
 
@@ -87,7 +88,7 @@ template <class T> class ReferenceCounter {
      */
     bool is_usable() const { return m_strongcount > 0; }
     /**
-     * Check if the counter is unloadable. Also positive if it is forgetable
+     * Check if the counter is unloadable. Also positive if it is forgettable
      * @return true if the object is unloadable, false otherwise
      */
     bool is_unloadable() const { return m_strongcount == 0; }
@@ -95,7 +96,7 @@ template <class T> class ReferenceCounter {
      * Check if the counter is forgettable based on the reference counts.
      * @return true if the object is forgettable, false otherwise
      */
-    bool is_forgetable() const {
+    bool is_forgettable() const {
         return m_strongcount == 0 && m_weakcount == 0;
     }
 
@@ -104,14 +105,14 @@ template <class T> class ReferenceCounter {
      * @brief The mutually exclusive status of the object for which we count
      * references
      */
-    enum class Status { SurelyLoaded, Unloadable, Forgetable };
+    enum class Status { SurelyLoaded, Unloadable, forgettable };
     /**
      * Returns the mutually exclusive status of the object.
      * @return the status of the object
      */
     Status get_status() const {
-        if (is_forgetable()) {
-            return Status::Forgetable;
+        if (is_forgettable()) {
+            return Status::forgettable;
         } else if (is_unloadable()) {
             return Status::Unloadable;
         } else {

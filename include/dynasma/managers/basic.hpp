@@ -35,7 +35,7 @@ class BasicManager : public AbstractManager<Seed> {
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
-        void ensure_loaded_impl() override {
+        void handle_usable_impl() override {
             if (this->p_obj == nullptr) {
                 // create new
                 Asset *p_asset = m_manager.m_allocator.allocate(1);
@@ -55,13 +55,13 @@ class BasicManager : public AbstractManager<Seed> {
                     this->m_manager.m_cached_registry, m_it);
             }
         }
-        void allow_unload_impl() override {
+        void handle_unloadable_impl() override {
             // move from used to cached
             this->m_manager.m_cached_registry.splice(
                 this->m_manager.m_cached_registry.end(),
                 this->m_manager.m_used_registry, m_it);
         }
-        void forget_impl() override {
+        void handle_forgettable_impl() override {
             if (this->p_obj != nullptr) {
                 this->unload();
             }

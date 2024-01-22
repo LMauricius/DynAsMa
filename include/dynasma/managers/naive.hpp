@@ -36,20 +36,20 @@ class NaiveManager : public AbstractManager<Seed> {
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
-        void ensure_loaded_impl() override {
+        void handle_usable_impl() override {
             Asset *p_asset = m_manager.m_allocator.allocate(1);
             this->p_obj = p_asset;
             std::visit(
                 [p_asset](const auto &arg) { new (p_asset) Seed::Asset(arg); },
                 m_seed.kernel);
         }
-        void allow_unload_impl() override {
+        void handle_unloadable_impl() override {
             Asset &asset_casted = *dynamic_cast<Asset *>(this->p_obj);
             this->p_obj->~PolymorphicBase();
             m_manager.m_allocator.deallocate(&asset_casted, 1);
             this->p_obj = nullptr;
         }
-        void forget_impl() override {
+        void handle_forgettable_impl() override {
             m_manager.m_seed_registry.erase(m_it); // deletes this
         }
 
