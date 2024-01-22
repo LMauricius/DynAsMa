@@ -80,6 +80,44 @@ template <class T> class ReferenceCounter {
             forget_impl();
         }
     }
+
+    /**
+     * Check if the counter object is usable.
+     * @return true if the object is usable, false otherwise
+     */
+    bool is_usable() const { return m_strongcount > 0; }
+    /**
+     * Check if the counter is unloadable. Also positive if it is forgetable
+     * @return true if the object is unloadable, false otherwise
+     */
+    bool is_unloadable() const { return m_strongcount == 0; }
+    /**
+     * Check if the counter is forgettable based on the reference counts.
+     * @return true if the object is forgettable, false otherwise
+     */
+    bool is_forgetable() const {
+        return m_strongcount == 0 && m_weakcount == 0;
+    }
+
+    /**
+     * @enum Status
+     * @brief The mutually exclusive status of the object for which we count
+     * references
+     */
+    enum class Status { SurelyLoaded, Unloadable, Forgetable };
+    /**
+     * Returns the mutually exclusive status of the object.
+     * @return the status of the object
+     */
+    Status get_status() const {
+        if (is_forgetable()) {
+            return Status::Forgetable;
+        } else if (is_unloadable()) {
+            return Status::Unloadable;
+        } else {
+            return Status::Usable;
+        }
+    }
 };
 } // namespace dynasma
 
