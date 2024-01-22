@@ -25,25 +25,26 @@ namespace dynasma {
  */
 template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
 class NaiveManager : public AbstractManager<Seed> {
+  public:
+    using Asset = typename Seed::Asset;
 
+  private:
     // reference counting response implementation
-    class ProxyRefCtr
-        : public TypeErasedReferenceCounter<typename Seed::Asset> {
+    class ProxyRefCtr : public TypeErasedReferenceCounter<Asset> {
         Seed m_seed;
         NaiveManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
 
       protected:
         void ensure_loaded_impl() override {
-            typename Seed::Asset *p_asset = m_manager.m_allocator.allocate(1);
+            Asset *p_asset = m_manager.m_allocator.allocate(1);
             this->p_obj = p_asset;
             std::visit(
                 [p_asset](const auto &arg) { new (p_asset) Seed::Asset(arg); },
                 m_seed.kernel);
         }
         void allow_unload_impl() override {
-            typename Seed::Asset &asset_casted =
-                *dynamic_cast<typename Seed::Asset *>(this->p_obj);
+            Asset &asset_casted = *dynamic_cast<Asset *>(this->p_obj);
             this->p_obj->~PolymorphicBase();
             m_manager.m_allocator.deallocate(&asset_casted, 1);
             this->p_obj = nullptr;
@@ -79,10 +80,10 @@ class NaiveManager : public AbstractManager<Seed> {
 
     using AbstractManager<Seed>::register_asset;
 
-    WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) override {
+    WeakPtr<Asset> register_asset(Seed &&seed) override {
         m_seed_registry.emplace_front(std::move(seed), *this);
         m_seed_registry.front().setSelfRegistryPos(m_seed_registry.begin());
-        return WeakPtr<typename Seed::Asset>(m_seed_registry.front());
+        return WeakPtr<Asset>(m_seed_registry.front());
     }
     void clean(std::size_t bytenum) override {
         // do nothing; cleans itself automatically

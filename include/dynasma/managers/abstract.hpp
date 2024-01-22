@@ -9,8 +9,9 @@
 namespace dynasma {
 
 template <SeedLike Seed> class AbstractManager {
-
   public:
+    using Asset = typename Seed::Asset;
+
     virtual ~AbstractManager(){};
 
     /**
@@ -20,10 +21,10 @@ template <SeedLike Seed> class AbstractManager {
      * @returns A WeakPtr to the (to-be-)constructed asset. Cast it to StrongPtr
      * to retrieve the asset
      */
-    virtual WeakPtr<typename Seed::Asset> register_asset(const Seed &seed) {
+    virtual WeakPtr<Asset> register_asset(const Seed &seed) {
         return register_asset(Seed(seed));
     }
-    virtual WeakPtr<typename Seed::Asset> register_asset(Seed &&seed) {
+    virtual WeakPtr<Asset> register_asset(Seed &&seed) {
         return register_asset((const Seed &)seed);
     }
 
