@@ -101,22 +101,53 @@ template <class T> class ReferenceCounter {
     }
 
     /**
-     * @enum Status
+     * @returns whether the asset is loaded
+     */
+    bool is_loaded() const { return p_obj != nullptr; }
+
+    /**
+     * @returns whether the asset is loaded, but unloadable
+     */
+    bool is_cached() const { return is_unloadable() && is_loaded(); }
+
+    /**
+     * @enum CounterState
+     * @brief The mutually exclusive status of the counter
+     */
+    enum class CounterState { Usable, Unloadable, Forgettable };
+
+    /**
+     * @return CounterState
+     */
+    CounterState get_counter_state() const {
+        if (is_forgettable()) {
+            return CounterState::Forgettable;
+        } else if (is_unloadable()) {
+            return CounterState::Unloadable;
+        } else {
+            return CounterState::Usable;
+        }
+    }
+
+    /**
+     * @enum ObjectState
      * @brief The mutually exclusive status of the object for which we count
      * references
      */
-    enum class Status { SurelyLoaded, Unloadable, forgettable };
+    enum class ObjectState { Used, Cached, Unloaded };
+
     /**
-     * Returns the mutually exclusive status of the object.
-     * @return the status of the object
+     * @return ObjectState
      */
-    Status get_status() const {
-        if (is_forgettable()) {
-            return Status::forgettable;
-        } else if (is_unloadable()) {
-            return Status::Unloadable;
+    ObjectState get_object_state() const {
+        if (is_loaded()) {
+            if (is_usable()) {
+                return ObjectState::Used;
+            } else {
+                return ObjectState::Cached;
+            }
         } else {
-            return Status::Usable;
+            return ObjectState::Unloaded;
         }
     }
 };
