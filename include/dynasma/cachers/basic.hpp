@@ -38,7 +38,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
       protected:
         void handle_usable_impl() override {
             if (!this->is_loaded()) {
-                Seed &seed = m_map_it->first;
+                const Seed &seed = m_map_it->first;
 
                 // create new
                 Asset *p_asset = m_manager.m_allocator.allocate(1);
@@ -100,7 +100,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
                 m_manager.m_unloaded_registry.end(),
                 m_manager.m_cached_registry, m_it);
 
-            if (is_forgettable()) {
+            if (this->is_forgettable()) {
                 forget();
             }
         }
@@ -144,7 +144,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         if (lb != m_searchable_registry.end() &&
             !(m_searchable_registry.key_comp()(seed, lb->first))) {
             // key already exists
-            return WeakPtr<Asset>(lb->second);
+            return WeakPtr<Asset>(*(lb->second));
         } else {
             // the key does not exist in the map
             // add it to the map

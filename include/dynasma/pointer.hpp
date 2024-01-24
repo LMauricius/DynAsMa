@@ -109,12 +109,12 @@ template <AssetLike Asset> class WeakPtr {
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
-            m_p_ctr.weak_release();
+            m_p_ctr->weak_release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr.weak_take();
+            m_p_ctr->weak_hold();
 
         return *this;
     }
