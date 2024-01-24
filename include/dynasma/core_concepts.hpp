@@ -64,6 +64,36 @@ concept SeedLike = requires(T seed) {
     std::visit([](const auto &kerval) { typename T::Asset a(kerval); },
                seed.kernel);
 };
+
+/**
+ * An asset seed, used to construct an asset. Allows for sorting.
+ * Must have an Asset typedef.
+ * Must have a variant member `kernel`.
+ * The Asset must be constructible from each kernel value.
+ * Must have a method load_cost() returning the cost of loading.
+ * Must be sortable using less_than operator
+ * @details
+ * @example @code
+ *  struct MySortableSeed {
+ *      using Asset = MyAsset;
+ *
+ *      std::variant<std::filename, json::object> kernel;
+ *
+ *      // The (estimated) cost of loading the asset, expressed in an
+ *      // arbitrary measure relative to other seeds
+ *      // (i.e. time to load or file size)
+ *      std::size_t load_cost() const;
+ *
+ *      // The comparator of the seed
+ *      bool operator<() const;
+ *  }
+ * @endcode
+ */
+template <class T>
+concept SortableSeedLike = SeedLike<T> && requires(T seed1, T seed2) {
+    // can be compared
+    { seed1 < seed2 } -> std::convertible_to<bool>;
+};
 }; // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_CONCEPTS_H
