@@ -24,7 +24,7 @@ namespace dynasma {
  * instances of the Seed::Asset
  */
 template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
-class NaiveManager : public AbstractManager<Seed> {
+class NaiveManager : public virtual AbstractManager<Seed> {
   public:
     using Asset = typename Seed::Asset;
 

@@ -23,7 +23,7 @@ namespace dynasma {
  * instances of the Seed::Asset
  */
 template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
-class BasicManager : public AbstractManager<Seed> {
+class BasicManager : public virtual AbstractManager<Seed> {
   public:
     using Asset = typename Seed::Asset;
 
@@ -36,7 +36,7 @@ class BasicManager : public AbstractManager<Seed> {
 
       protected:
         void handle_usable_impl() override {
-            if (this->p_obj == nullptr) {
+            if (!this->is_loaded()) {
                 // create new
                 Asset *p_asset = m_manager.m_allocator.allocate(1);
                 this->p_obj = p_asset;
@@ -62,7 +62,7 @@ class BasicManager : public AbstractManager<Seed> {
                 this->m_manager.m_used_registry, m_it);
         }
         void handle_forgettable_impl() override {
-            if (this->p_obj != nullptr) {
+            if (this->is_loaded()) {
                 this->unload();
             }
             m_manager.m_unloaded_registry.erase(m_it); // deletes this
