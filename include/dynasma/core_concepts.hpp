@@ -58,11 +58,6 @@ concept SeedLike = requires(T seed) {
 
     // we need to have a kernel member
     seed.kernel;
-
-    // Asset needs to be constructible via each of the possible kernel value
-    // types
-    std::visit([](const auto &kerval) { typename T::Asset a(kerval); },
-               seed.kernel);
 };
 
 /**
