@@ -22,14 +22,15 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
+template <SeedLike Seed, SeededAllocatorLike<Seed> Alloc>
 class BasicManager : public virtual AbstractManager<Seed> {
   public:
-    using Asset = typename Seed::Asset;
+    using ConstructedAsset = typename Alloc::value_type;
+    using ExposedAsset = typename Seed::Asset;
 
   private:
     // reference counting response implementation
-    class ProxyRefCtr : public TypeErasedReferenceCounter<Asset> {
+    class ProxyRefCtr : public TypeErasedReferenceCounter<ExposedAsset> {
         Seed m_seed;
         BasicManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
@@ -38,10 +39,12 @@ class BasicManager : public virtual AbstractManager<Seed> {
         void handle_usable_impl() override {
             if (!this->is_loaded()) {
                 // create new
-                Asset *p_asset = m_manager.m_allocator.allocate(1);
+                ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
                 this->p_obj = p_asset;
                 std::visit(
-                    [p_asset](const auto &arg) { new (p_asset) Asset(arg); },
+                    [p_asset](const auto &arg) {
+                        new (p_asset) ConstructedAsset(arg);
+                    },
                     this->m_seed.kernel);
 
                 // move from unloaded to used
@@ -80,7 +83,8 @@ class BasicManager : public virtual AbstractManager<Seed> {
          */
         void unload() {
             // unload
-            Asset &asset_casted = *dynamic_cast<Asset *>(this->p_obj);
+            ConstructedAsset &asset_casted =
+                *dynamic_cast<ConstructedAsset *>(this->p_obj);
             this->p_obj->~PolymorphicBase();
             m_manager.m_allocator.deallocate(&asset_casted, 1);
             this->p_obj = nullptr;
@@ -119,11 +123,11 @@ class BasicManager : public virtual AbstractManager<Seed> {
 
     using AbstractManager<Seed>::register_asset;
 
-    WeakPtr<Asset> register_asset(Seed &&seed) override {
+    WeakPtr<ExposedAsset> register_asset(Seed &&seed) override {
         m_unloaded_registry.emplace_front(std::move(seed), *this);
         m_unloaded_registry.front().setSelfRegistryPos(
             &m_unloaded_registry, m_unloaded_registry.begin());
-        return WeakPtr<Asset>(m_unloaded_registry.front());
+        return WeakPtr<ExposedAsset>(m_unloaded_registry.front());
     }
     void clean(std::size_t bytenum) override {
         /*
@@ -131,8 +135,9 @@ class BasicManager : public virtual AbstractManager<Seed> {
         */
         std::size_t bFreed = 0;
         while (bFreed < bytenum && !m_cached_registry.empty()) {
-            bFreed += dynamic_cast<Asset &>(*m_cached_registry.front().p_get())
-                          .memory_cost();
+            bFreed +=
+                dynamic_cast<ExposedAsset &>(*m_cached_registry.front().p_get())
+                    .memory_cost();
             m_cached_registry.front().unload();
         }
     }

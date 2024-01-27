@@ -23,14 +23,15 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SortableSeedLike Seed, AllocatorLike<typename Seed::Asset> Alloc>
+template <SortableSeedLike Seed, SeededAllocatorLike<Seed> Alloc>
 class BasicCacher : public virtual AbstractCacher<Seed> {
   public:
-    using Asset = typename Seed::Asset;
+    using ConstructedAsset = typename Alloc::value_type;
+    using ExposedAsset = typename Seed::Asset;
 
   private:
     // reference counting response implementation
-    class ProxyRefCtr : public TypeErasedReferenceCounter<Asset> {
+    class ProxyRefCtr : public TypeErasedReferenceCounter<ExposedAsset> {
         BasicCacher &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
         std::map<Seed, ProxyRefCtr *const>::iterator m_map_it;
@@ -41,10 +42,12 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
                 const Seed &seed = m_map_it->first;
 
                 // create new
-                Asset *p_asset = m_manager.m_allocator.allocate(1);
+                ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
                 this->p_obj = p_asset;
                 std::visit(
-                    [p_asset](const auto &arg) { new (p_asset) Asset(arg); },
+                    [p_asset](const auto &arg) {
+                        new (p_asset) ConstructedAsset(arg);
+                    },
                     seed.kernel);
 
                 // move from unloaded to used
@@ -90,7 +93,8 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
          */
         void unload() {
             // unload
-            Asset &asset_casted = *dynamic_cast<Asset *>(this->p_obj);
+            ConstructedAsset &asset_casted =
+                *dynamic_cast<ConstructedAsset *>(this->p_obj);
             this->p_obj->~PolymorphicBase();
             m_manager.m_allocator.deallocate(&asset_casted, 1);
             this->p_obj = nullptr;
@@ -137,14 +141,14 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
     using AbstractCacher<Seed>::retrieve_asset;
 
-    WeakPtr<Asset> retrieve_asset(Seed &&seed) override {
+    WeakPtr<ExposedAsset> retrieve_asset(Seed &&seed) override {
         // check if the seed has already been registered
         auto lb = m_searchable_registry.lower_bound(seed);
 
         if (lb != m_searchable_registry.end() &&
             !(m_searchable_registry.key_comp()(seed, lb->first))) {
             // key already exists
-            return WeakPtr<Asset>(*(lb->second));
+            return WeakPtr<ExposedAsset>(*(lb->second));
         } else {
             // the key does not exist in the map
             // add it to the map
@@ -162,7 +166,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
             newCtr.setSelfRegistryPos(&m_unloaded_registry,
                                       m_unloaded_registry.begin(), it);
 
-            return WeakPtr<Asset>(newCtr);
+            return WeakPtr<ExposedAsset>(newCtr);
         }
     }
     void clean(std::size_t bytenum) override {
@@ -171,7 +175,8 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         */
         std::size_t bFreed = 0;
         while (bFreed < bytenum && !m_cached_registry.empty()) {
-            bFreed += dynamic_cast<Asset &>(*m_cached_registry.front().p_get())
+            bFreed += dynamic_cast<ConstructedAsset &>(
+                          *m_cached_registry.front().p_get())
                           .memory_cost();
             m_cached_registry.front().unload();
         }
