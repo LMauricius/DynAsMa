@@ -102,6 +102,29 @@ concept AllocatorWLocality =
         { a.allocate(n, cvp) } -> std::same_as<pointer>;
     };
 
+/**
+ * @brief Allocator for type derived from T
+ */
+template <
+    class A, typename T, typename pointer = std::allocator_traits<A>::pointer,
+    typename const_pointer = std::allocator_traits<A>::const_pointer,
+    typename void_pointer = std::allocator_traits<A>::void_pointer,
+    typename const_void_pointer = std::allocator_traits<A>::const_void_pointer,
+    typename size_type = std::allocator_traits<A>::size_type,
+    typename difference_type = std::allocator_traits<A>::difference_type>
+concept DerivedAllocatorLike =
+    AllocatorLike<A> && std::derived_from<typename A::value_type, T>;
+
+template <
+    class A, typename T, typename pointer = std::allocator_traits<A>::pointer,
+    typename const_void_pointer = std::allocator_traits<A>::const_void_pointer,
+    typename size_type = std::allocator_traits<A>::size_type>
+concept DerivedAllocatorWLocality =
+    DerivedAllocatorLike<A, T> &&
+    requires(A a, const_void_pointer cvp, size_type n) {
+        { a.allocate(n, cvp) } -> std::same_as<pointer>;
+    };
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H

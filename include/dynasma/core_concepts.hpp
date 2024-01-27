@@ -94,6 +94,21 @@ concept SortableSeedLike = SeedLike<T> && requires(T seed1, T seed2) {
     // can be compared
     { seed1 < seed2 } -> std::convertible_to<bool>;
 };
+
+/**
+ * @brief Allocator for type derived from Seed::Asset. The allocator's
+ * value_type must be constructible from each of the possible kernel values,
+ * just like Seed::Asset.
+ * @param Seed the seed type
+ */
+template <class A, class Seed>
+concept SeededAllocatorLike =
+    DerivedAllocatorLike<A, typename Seed::Asset> && requires(Seed seed) {
+        // Asset needs to be constructible via each of the possible kernel value
+        // types
+        std::visit([](const auto &kerval) { typename A::value_type a(kerval); },
+                   seed.kernel);
+    };
 }; // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_CONCEPTS_H
