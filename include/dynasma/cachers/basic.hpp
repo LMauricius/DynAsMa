@@ -141,14 +141,14 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
     using AbstractCacher<Seed>::retrieve_asset;
 
-    WeakPtr<ExposedAsset> retrieve_asset(Seed &&seed) override {
+    LazyPtr<ExposedAsset> retrieve_asset(Seed &&seed) override {
         // check if the seed has already been registered
         auto lb = m_searchable_registry.lower_bound(seed);
 
         if (lb != m_searchable_registry.end() &&
             !(m_searchable_registry.key_comp()(seed, lb->first))) {
             // key already exists
-            return WeakPtr<ExposedAsset>(*(lb->second));
+            return LazyPtr<ExposedAsset>(*(lb->second));
         } else {
             // the key does not exist in the map
             // add it to the map
@@ -166,7 +166,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
             newCtr.setSelfRegistryPos(&m_unloaded_registry,
                                       m_unloaded_registry.begin(), it);
 
-            return WeakPtr<ExposedAsset>(newCtr);
+            return LazyPtr<ExposedAsset>(newCtr);
         }
     }
     void clean(std::size_t bytenum) override {

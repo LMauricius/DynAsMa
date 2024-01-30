@@ -29,22 +29,22 @@ template <template <typename, typename> typename Manager> void testManager() {
     const TestSeed seed1{"<My asset 1>"};
     const TestSeed seed2{"<My asset 2>"};
 
-    dynasma::WeakPtr<TestAsset> weakPtr1;
-    dynasma::WeakPtr<TestAsset> weakPtr2;
+    dynasma::LazyPtr<TestAsset> lazyPtr1;
+    dynasma::LazyPtr<TestAsset> lazyPtr2;
 
     std::cout << "Entering block...\n";
     {
         std::cout << "    Entered block!\n";
 
         std::cout << "    Registering asset 1...\n";
-        weakPtr1 = manager.register_asset(seed1);
+        lazyPtr1 = manager.register_asset(seed1);
         std::cout << "    Asset registered!\n";
 
-        std::cout << "    Taking strong reference...\n";
-        auto strongPtr = weakPtr1.getLoaded();
-        std::cout << "    Strong reference taken!\n";
+        std::cout << "    Taking firm reference...\n";
+        auto firmPtr = lazyPtr1.getLoaded();
+        std::cout << "    Firm reference taken!\n";
 
-        std::cout << "    Asset pointer: " << &*strongPtr << "\n";
+        std::cout << "    Asset pointer: " << &*firmPtr << "\n";
 
         std::cout << "    Exiting block...\n";
     }
@@ -55,14 +55,14 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Entered block!\n";
 
         std::cout << "    Registering asset 2...\n";
-        weakPtr2 = manager.register_asset(seed2);
+        lazyPtr2 = manager.register_asset(seed2);
         std::cout << "    Asset registered!\n";
 
-        std::cout << "    Taking strong reference...\n";
-        auto strongPtr = weakPtr2.getLoaded();
-        std::cout << "    Strong reference taken!\n";
+        std::cout << "    Taking firm reference...\n";
+        auto firmPtr = lazyPtr2.getLoaded();
+        std::cout << "    Firm reference taken!\n";
 
-        std::cout << "    Asset pointer: " << &*strongPtr << "\n";
+        std::cout << "    Asset pointer: " << &*firmPtr << "\n";
 
         std::cout << "    Exiting block...\n";
     }

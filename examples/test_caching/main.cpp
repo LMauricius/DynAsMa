@@ -36,41 +36,41 @@ int main() {
 
     TestSeed seed1{"<My asset 1>"}, seed2{"<My asset 2>"};
 
-    dynasma::WeakPtr<TestAsset> weakPtr_a, weakPtr_b;
+    dynasma::LazyPtr<TestAsset> lazyPtr_a, lazyPtr_b;
 
     {
-        auto strongPtr1 = cacher.retrieve_asset(seed1).getLoaded();
-        auto strongPtr2 = cacher.retrieve_asset(seed2).getLoaded();
-        auto strongPtr3 = cacher.retrieve_asset(seed1).getLoaded();
+        auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
+        auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
+        auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
 
-        std::cout << "strongPtr1 === strongPtr2: "
-                  << (&*strongPtr1 == &*strongPtr2) << std::endl;
+        std::cout << "firmPtr1 === firmPtr2: "
+                  << (&*firmPtr1 == &*firmPtr2) << std::endl;
 
-        std::cout << "strongPtr1 === strongPtr3: "
-                  << (&*strongPtr1 == &*strongPtr3) << std::endl;
+        std::cout << "firmPtr1 === firmPtr3: "
+                  << (&*firmPtr1 == &*firmPtr3) << std::endl;
 
-        weakPtr_a = strongPtr1;
+        lazyPtr_a = firmPtr1;
     }
 
     {
-        auto strongPtr1 = cacher.retrieve_asset(seed1).getLoaded();
-        auto strongPtr2 = cacher.retrieve_asset(seed2).getLoaded();
-        auto strongPtr3 = cacher.retrieve_asset(seed1).getLoaded();
+        auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
+        auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
+        auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
 
-        std::cout << "strongPtr1 === strongPtr2: "
-                  << (&*strongPtr1 == &*strongPtr2) << std::endl;
+        std::cout << "firmPtr1 === firmPtr2: "
+                  << (&*firmPtr1 == &*firmPtr2) << std::endl;
 
-        std::cout << "strongPtr1 === strongPtr3: "
-                  << (&*strongPtr1 == &*strongPtr3) << std::endl;
+        std::cout << "firmPtr1 === firmPtr3: "
+                  << (&*firmPtr1 == &*firmPtr3) << std::endl;
 
-        weakPtr_b = strongPtr1;
+        lazyPtr_b = firmPtr1;
     }
 
-    auto strongPtr_a = weakPtr_a.getLoaded();
-    auto strongPtr_b = weakPtr_b.getLoaded();
+    auto firmPtr_a = lazyPtr_a.getLoaded();
+    auto firmPtr_b = lazyPtr_b.getLoaded();
 
-    std::cout << "strongPtr_a === strongPtr_b: "
-              << (&*strongPtr_a == &*strongPtr_b) << std::endl;
+    std::cout << "firmPtr_a === firmPtr_b: "
+              << (&*firmPtr_a == &*firmPtr_b) << std::endl;
 
     return 0;
 }

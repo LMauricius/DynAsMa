@@ -84,10 +84,10 @@ class NaiveManager : public virtual AbstractManager<Seed> {
 
     using AbstractManager<Seed>::register_asset;
 
-    WeakPtr<ExposedAsset> register_asset(Seed &&seed) override {
+    LazyPtr<ExposedAsset> register_asset(Seed &&seed) override {
         m_seed_registry.emplace_front(std::move(seed), *this);
         m_seed_registry.front().setSelfRegistryPos(m_seed_registry.begin());
-        return WeakPtr<ExposedAsset>(m_seed_registry.front());
+        return LazyPtr<ExposedAsset>(m_seed_registry.front());
     }
     void clean(std::size_t bytenum) override {
         // do nothing; cleans itself automatically

@@ -20,79 +20,79 @@ template <class T>
 using TypeErasedReferenceCounter =
     ReferenceCounter<typename CopyCV<T, PolymorphicBase>::type>;
 
-template <AssetLike Asset> class StrongPtr;
+template <AssetLike Asset> class FirmPtr;
 
 /**
- * @brief A weak reference to an asset. Doesn't ensure the asset is loaded.
- * @note must be cast to a StrongPtr to access the asset.
+ * @brief A lazy reference to an asset. Doesn't ensure the asset is loaded.
+ * @note must be cast to a FirmPtr to access the asset.
  */
-template <AssetLike Asset> class WeakPtr {
+template <AssetLike Asset> class LazyPtr {
     // type-erased reference counter.
     using RefCtr = TypeErasedReferenceCounter<Asset>;
 
-    template <AssetLike T> friend class WeakPtr;
-    template <AssetLike T> friend class StrongPtr;
+    template <AssetLike T> friend class LazyPtr;
+    template <AssetLike T> friend class FirmPtr;
 
     RefCtr *m_p_ctr;
 
   public:
     // Default constructor
-    WeakPtr() : m_p_ctr(nullptr) {}
+    LazyPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
     // The ctr must produce instances derived from Asset
-    WeakPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.weak_hold(); }
+    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.lazy_hold(); }
 
-    // Copy & Move constructors for WeakPtr
+    // Copy & Move constructors for LazyPtr
 
-    // WeakPtr<Asset> &
+    // LazyPtr<Asset> &
     template <AssetLike OthersAsset>
-    WeakPtr(const WeakPtr<OthersAsset> &other)
+    LazyPtr(const LazyPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
-        : WeakPtr(*other.m_p_ctr) {}
+        : LazyPtr(*other.m_p_ctr) {}
 
-    // WeakPtr<Asset> &&
+    // LazyPtr<Asset> &&
     template <AssetLike OthersAsset>
-    WeakPtr(WeakPtr<OthersAsset> &&other)
+    LazyPtr(LazyPtr<OthersAsset> &&other)
         requires PointerCastable<Asset, OthersAsset>
         : m_p_ctr(other.m_p_ctr) {
         other.m_p_ctr = nullptr;
     }
 
-    // Copy & Move constructors for StrongPtr
+    // Copy & Move constructors for FirmPtr
 
-    // StrongPtr<Asset> &
+    // FirmPtr<Asset> &
     template <AssetLike OthersAsset>
-    WeakPtr(const StrongPtr<OthersAsset> &other)
+    LazyPtr(const FirmPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
-        : WeakPtr(*other.m_p_ctr) {}
+        : LazyPtr(*other.m_p_ctr) {}
 
-    ~WeakPtr() {
+    ~LazyPtr() {
         if (m_p_ctr)
-            m_p_ctr->weak_release();
+            m_p_ctr->lazy_release();
     }
 
-    // Copy & Move assignment for WeakPtr
+    // Copy & Move assignment for LazyPtr
 
-    // WeakPtr<Asset> &
+    // LazyPtr<Asset> &
     template <AssetLike OthersAsset>
-    WeakPtr &operator=(const WeakPtr<OthersAsset> &other)
+    LazyPtr &operator=(const LazyPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
-            m_p_ctr.weak_release();
+            m_p_ctr.lazy_release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr.weak_take();
+            m_p_ctr.lazy_take();
 
         return *this;
     }
 
-    // WeakPtr<Asset> &&
+    // LazyPtr<Asset> &&
     template <AssetLike OthersAsset>
-    WeakPtr &operator=(WeakPtr<OthersAsset> &&other)
+    LazyPtr &operator=(LazyPtr<OthersAsset> &&other)
         requires PointerCastable<Asset, OthersAsset>
     {
         m_p_ctr = other.m_p_ctr;
@@ -101,57 +101,57 @@ template <AssetLike Asset> class WeakPtr {
         return *this;
     }
 
-    // Copy & Move assignment for StrongPtr
+    // Copy & Move assignment for FirmPtr
 
-    // StrongPtr<Asset> &
+    // FirmPtr<Asset> &
     template <AssetLike OthersAsset>
-    WeakPtr &operator=(const StrongPtr<OthersAsset> &other)
+    LazyPtr &operator=(const FirmPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
-            m_p_ctr->weak_release();
+            m_p_ctr->lazy_release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr->weak_hold();
+            m_p_ctr->lazy_hold();
 
         return *this;
     }
 
     /**
-     * @brief Ensures the asset is loaded before storing it into a StrongPtr
-     * @returns a StrongPtr to the asset
+     * @brief Ensures the asset is loaded before storing it into a FirmPtr
+     * @returns a FirmPtr to the asset
      */
-    StrongPtr<Asset> getLoaded() const {
+    FirmPtr<Asset> getLoaded() const {
         if (m_p_ctr)
-            return StrongPtr<Asset>(*m_p_ctr);
+            return FirmPtr<Asset>(*m_p_ctr);
         else
-            return StrongPtr<Asset>();
+            return FirmPtr<Asset>();
     }
 };
 
 /**
- * @brief A strong reference to an asset. Ensures the asset is loaded.
+ * @brief A firm reference to an asset. Ensures the asset is loaded.
  * @note Can be used like a pointer to the asset.
  */
-template <AssetLike Asset> class StrongPtr {
+template <AssetLike Asset> class FirmPtr {
     // type-erased reference counter.
     using RefCtr = TypeErasedReferenceCounter<Asset>;
 
-    template <AssetLike T> friend class WeakPtr;
-    template <AssetLike T> friend class StrongPtr;
+    template <AssetLike T> friend class LazyPtr;
+    template <AssetLike T> friend class FirmPtr;
 
     RefCtr *m_p_ctr;
     Asset *m_p_asset;
 
   public:
     // Default constructor
-    StrongPtr() : m_p_ctr(nullptr) {}
+    FirmPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
     // The ctr must produce instances derived from Asset
-    StrongPtr(RefCtr &ctr)
+    FirmPtr(RefCtr &ctr)
         : m_p_ctr(&ctr),
           m_p_asset(
               // assume the casting is possible, i.e. we have a valid pointer
@@ -159,41 +159,41 @@ template <AssetLike Asset> class StrongPtr {
               // this could be used to optimize for non-virtual inheritances
               &*dynamic_cast<Asset *>(&ctr.hold())) {}
 
-    // Copy & move constructors for StrongPtr
+    // Copy & move constructors for FirmPtr
 
-    // StrongPtr<Asset> &
+    // FirmPtr<Asset> &
     template <AssetLike OthersAsset>
-    StrongPtr(const StrongPtr<OthersAsset> &other)
+    FirmPtr(const FirmPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
-        : StrongPtr(*other.m_p_ctr) {}
+        : FirmPtr(*other.m_p_ctr) {}
 
-    // StrongPtr<Asset> &&
+    // FirmPtr<Asset> &&
     template <AssetLike OthersAsset>
-    StrongPtr(StrongPtr<OthersAsset> &&other)
+    FirmPtr(FirmPtr<OthersAsset> &&other)
         requires PointerCastable<Asset, OthersAsset>
         : m_p_ctr(other.m_p_ctr),
           m_p_asset(dynamic_cast<Asset *>(other.m_p_ctr)) {
         other.m_p_ctr = nullptr;
     }
 
-    // Copy & move constructor for WeakPtr
+    // Copy & move constructor for LazyPtr
 
-    // WeakPtr<Asset> &
+    // LazyPtr<Asset> &
     template <AssetLike OthersAsset>
-    StrongPtr(const WeakPtr<OthersAsset> &other)
+    FirmPtr(const LazyPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
-        : StrongPtr(*other.m_p_ctr) {}
+        : FirmPtr(*other.m_p_ctr) {}
 
-    ~StrongPtr() {
+    ~FirmPtr() {
         if (m_p_ctr)
             m_p_ctr->release();
     }
 
-    // copy & move assignment for StrongPtr
+    // copy & move assignment for FirmPtr
 
-    // StrongPtr<Asset> &
+    // FirmPtr<Asset> &
     template <AssetLike OthersAsset>
-    StrongPtr &operator=(const StrongPtr<OthersAsset> &other)
+    FirmPtr &operator=(const FirmPtr<OthersAsset> &other)
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
@@ -207,9 +207,9 @@ template <AssetLike Asset> class StrongPtr {
         return *this;
     }
 
-    // StrongPtr<Asset> &&
+    // FirmPtr<Asset> &&
     template <AssetLike OthersAsset>
-    StrongPtr &operator=(StrongPtr<OthersAsset> &&other)
+    FirmPtr &operator=(FirmPtr<OthersAsset> &&other)
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)
@@ -223,11 +223,11 @@ template <AssetLike Asset> class StrongPtr {
         return *this;
     }
 
-    // Copy & move assignment for WeakPtr
+    // Copy & move assignment for LazyPtr
 
-    // WeakPtr&<Asset> &
+    // LazyPtr&<Asset> &
     template <AssetLike OthersAsset>
-    StrongPtr &operator=(const WeakPtr<Asset> &other)
+    FirmPtr &operator=(const LazyPtr<Asset> &other)
         requires PointerCastable<Asset, OthersAsset>
     {
         if (m_p_ctr)

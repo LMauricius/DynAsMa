@@ -45,8 +45,8 @@ int main() {
 
     TestSeed seed{"<My asset 1>"};
 
-    auto weakPtr = mgr.register_asset(seed);
-    auto strongPtr = weakPtr.getLoaded();
+    auto lazyPtr = mgr.register_asset(seed);
+    auto firmPtr = lazyPtr.getLoaded();
 
     return 0;
 }

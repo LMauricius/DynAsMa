@@ -123,11 +123,11 @@ class BasicManager : public virtual AbstractManager<Seed> {
 
     using AbstractManager<Seed>::register_asset;
 
-    WeakPtr<ExposedAsset> register_asset(Seed &&seed) override {
+    LazyPtr<ExposedAsset> register_asset(Seed &&seed) override {
         m_unloaded_registry.emplace_front(std::move(seed), *this);
         m_unloaded_registry.front().setSelfRegistryPos(
             &m_unloaded_registry, m_unloaded_registry.begin());
-        return WeakPtr<ExposedAsset>(m_unloaded_registry.front());
+        return LazyPtr<ExposedAsset>(m_unloaded_registry.front());
     }
     void clean(std::size_t bytenum) override {
         /*

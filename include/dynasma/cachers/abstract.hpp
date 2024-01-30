@@ -23,18 +23,18 @@ template <SortableSeedLike Seed> class AbstractCacher {
      * only if the asset is not already cached
      * @param seed an object containing the `kernel` member whose value will be
      * passed to the Seed::Asset class' constructor
-     * @returns A WeakPtr to the (to-be-)constructed asset. Cast it to StrongPtr
+     * @returns A LazyPtr to the (to-be-)constructed asset. Cast it to FirmPtr
      * to retrieve the asset
      */
-    virtual WeakPtr<Asset> retrieve_asset(const Seed &seed) {
+    virtual LazyPtr<Asset> retrieve_asset(const Seed &seed) {
         return retrieve_asset(Seed(seed));
     }
-    virtual WeakPtr<Asset> retrieve_asset(Seed &&seed) {
+    virtual LazyPtr<Asset> retrieve_asset(Seed &&seed) {
         return retrieve_asset((const Seed &)seed);
     }
 
     /**
-     * @brief Attempts to unload not-strongly-referenced assets to free memory
+     * @brief Attempts to unload not-firmly-referenced assets to free memory
      * @param bytenum the number of bytes to attempt to free from memory
      */
     virtual void clean(std::size_t bytenum) = 0;

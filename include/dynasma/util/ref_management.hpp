@@ -7,8 +7,8 @@
 
 namespace dynasma {
 template <class T> class ReferenceCounter {
-    std::size_t m_strongcount;
-    std::size_t m_weakcount;
+    std::size_t m_firmcount;
+    std::size_t m_lazycount;
 
   protected:
     T *p_obj;
@@ -33,11 +33,11 @@ template <class T> class ReferenceCounter {
     virtual void handle_forgettable_impl() = 0;
 
   public:
-    ReferenceCounter() : m_strongcount(0), m_weakcount(0), p_obj(nullptr){};
+    ReferenceCounter() : m_firmcount(0), m_lazycount(0), p_obj(nullptr){};
     virtual ~ReferenceCounter(){};
 
     /**
-     * @brief Raises the strong reference count
+     * @brief Raises the firm reference count
      * @note If the asset is not loaded, it will be loaded
      * @returns reference to the loaded asset
      */
@@ -45,18 +45,18 @@ template <class T> class ReferenceCounter {
         if (is_unloadable()) {
             handle_usable_impl();
         }
-        m_strongcount++;
+        m_firmcount++;
         return *p_obj;
     }
     /**
-     * @brief Reduces the strong reference count
+     * @brief Reduces the firm reference count
      * @note If the count reaches 0, the asset can be unloaded
      */
     void release() {
-        m_strongcount--;
+        m_firmcount--;
         if (is_unloadable()) {
             handle_unloadable_impl();
-            if (m_weakcount == 0) {
+            if (m_lazycount == 0) {
                 handle_forgettable_impl();
             }
         }
@@ -68,15 +68,15 @@ template <class T> class ReferenceCounter {
     T *p_get() { return p_obj; }
 
     /**
-     * @brief Increases the weak reference count
+     * @brief Increases the lazy reference count
      */
-    void weak_hold() { m_weakcount++; }
+    void lazy_hold() { m_lazycount++; }
     /**
-     * @brief Reduces the weak reference count
+     * @brief Reduces the lazy reference count
      * @note If the count reaches 0, this instance can be deleted
      */
-    void weak_release() {
-        m_weakcount--;
+    void lazy_release() {
+        m_lazycount--;
         if (is_forgettable()) {
             handle_forgettable_impl();
         }
@@ -86,18 +86,18 @@ template <class T> class ReferenceCounter {
      * Check if the counter object is usable.
      * @return true if the object is usable, false otherwise
      */
-    bool is_usable() const { return m_strongcount > 0; }
+    bool is_usable() const { return m_firmcount > 0; }
     /**
      * Check if the counter is unloadable. Also positive if it is forgettable
      * @return true if the object is unloadable, false otherwise
      */
-    bool is_unloadable() const { return m_strongcount == 0; }
+    bool is_unloadable() const { return m_firmcount == 0; }
     /**
      * Check if the counter is forgettable based on the reference counts.
      * @return true if the object is forgettable, false otherwise
      */
     bool is_forgettable() const {
-        return m_strongcount == 0 && m_weakcount == 0;
+        return m_firmcount == 0 && m_lazycount == 0;
     }
 
     /**
