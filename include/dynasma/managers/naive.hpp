@@ -18,12 +18,12 @@ namespace dynasma {
 /**
  * @brief The naive asset manager. Does the job, but has no advanced memory
  * management or caching features
- * @tparam Seed A SeedLike type describing everything we need to know about the
- * Asset
+ * @tparam Seed A ReloadableSeedLike type describing everything we need to know
+ * about the Asset
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SeedLike Seed, SeededAllocatorLike<Seed> Alloc>
+template <ReloadableSeedLike Seed, SeededAllocatorLike<Seed> Alloc>
 class NaiveManager : public virtual AbstractManager<Seed> {
   public:
     using ConstructedAsset = typename Alloc::value_type;

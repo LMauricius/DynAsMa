@@ -12,7 +12,7 @@ namespace dynasma {
  * @brief Abstract base class for cachers - asset managers that cache and reuse
  * objects with the same seeds
  */
-template <SortableSeedLike Seed> class AbstractCacher {
+template <CacheableSeedLike Seed> class AbstractCacher {
   public:
     using Asset = typename Seed::Asset;
 

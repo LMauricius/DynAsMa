@@ -8,7 +8,7 @@
 
 namespace dynasma {
 
-template <SeedLike Seed> class AbstractManager {
+template <ReloadableSeedLike Seed> class AbstractManager {
   public:
     using Asset = typename Seed::Asset;
 
