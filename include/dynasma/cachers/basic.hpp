@@ -23,7 +23,7 @@ namespace dynasma {
  * @tparam Alloc The AllocatorLike type whose instance will be used to construct
  * instances of the Seed::Asset
  */
-template <SortableSeedLike Seed, SeededAllocatorLike<Seed> Alloc>
+template <CacheableSeedLike Seed, SeededAllocatorLike<Seed> Alloc>
 class BasicCacher : public virtual AbstractCacher<Seed> {
   public:
     using ConstructedAsset = typename Alloc::value_type;

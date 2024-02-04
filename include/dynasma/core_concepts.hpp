@@ -61,6 +61,22 @@ concept SeedLike = requires(T seed) {
 };
 
 /**
+ * An asset seed, used to construct an asset later.
+ * Must be copy constructible in addition to being SeedLike.
+ */
+template <class T>
+concept ReloadableSeedLike = SeedLike<T> && std::is_copy_constructible_v<T>;
+
+/**
+ * A sortable class, which can be compared using less_than operator.
+ */
+template <class T>
+concept Sortable = requires(T a, T b) {
+    // can be compared
+    { a < b } -> std::convertible_to<bool>;
+};
+
+/**
  * An asset seed, used to construct an asset. Allows for sorting.
  * Must have an Asset typedef.
  * Must have a variant member `kernel`.
@@ -85,10 +101,7 @@ concept SeedLike = requires(T seed) {
  * @endcode
  */
 template <class T>
-concept SortableSeedLike = SeedLike<T> && requires(T seed1, T seed2) {
-    // can be compared
-    { seed1 < seed2 } -> std::convertible_to<bool>;
-};
+concept CacheableSeedLike = ReloadableSeedLike<T> && Sortable<T>;
 
 /**
  * @brief Allocator for type derived from Seed::Asset. The allocator's
