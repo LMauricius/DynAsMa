@@ -242,7 +242,7 @@ template <AssetLike Asset> class FirmPtr {
     }
 
     Asset &operator*() const { return *m_p_asset; }
-    Asset &operator->() const { return *m_p_asset; }
+    Asset *operator->() const { return m_p_asset; }
 };
 
 } // namespace dynasma
