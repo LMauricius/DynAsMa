@@ -20,7 +20,7 @@ template <SeedLike Seed> class AbstractKeeper {
   public:
     using Asset = typename Seed::Asset;
 
-    virtual ~AbstractManager(){};
+    virtual ~AbstractKeeper(){};
 
     /**
      * @brief Constructs an instance of Seed::Asset with a given seed
