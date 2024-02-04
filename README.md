@@ -39,6 +39,7 @@ When using it in a project, always stay at a specific release.
 - FirmPtr: a reference to an Asset that must be loaded and can be accessed through the FirmPtr
 - Manager: Source of Asset pointers with a loading/unloading policy. Gives a unique Asset per each seed registration.
 - Cacher: Source of const Asset pointers with a loading/unloading policy. Recycles Assets per equal seeds.
+- Keeper: Source of Asset pointers with an unloading policy. Creates a new Asset immediately per each seed given.
 
 
 # Installing
