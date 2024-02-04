@@ -1,6 +1,6 @@
 #pragma once
-#ifndef INCLUDED_DYNASMA_MAN_ABSTRACT_H
-#define INCLUDED_DYNASMA_MAN_ABSTRACT_H
+#ifndef INCLUDED_DYNASMA_KEEPER_ABSTRACT_H
+#define INCLUDED_DYNASMA_KEEPER_ABSTRACT_H
 
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/pointer.hpp"
@@ -39,4 +39,4 @@ template <SeedLike Seed> class AbstractKeeper {
 };
 } // namespace dynasma
 
-#endif // INCLUDED_DYNASMA_MAN_ABSTRACT_H
+#endif // INCLUDED_DYNASMA_KEEPER_ABSTRACT_H

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef INCLUDED_DYNASMA_MAN_SIMPLE_H
-#define INCLUDED_DYNASMA_MAN_SIMPLE_H
+#ifndef INCLUDED_DYNASMA_KEEPER_SIMPLE_H
+#define INCLUDED_DYNASMA_KEEPER_SIMPLE_H
 
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/keepers/abstract.hpp"
@@ -82,4 +82,4 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
 };
 } // namespace dynasma
 
-#endif // INCLUDED_DYNASMA_MAN_SIMPLE_H
+#endif // INCLUDED_DYNASMA_KEEPER_SIMPLE_H
