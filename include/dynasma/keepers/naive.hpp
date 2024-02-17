@@ -37,7 +37,7 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
       protected:
         void handle_usable_impl() override {}
         void handle_unloadable_impl() override {}
-        void handle_forgettable_impl() override { delete *this; }
+        void handle_forgettable_impl() override { delete this; }
 
       public:
         ProxyRefCtr(const Seed &seed, NaiveKeeper &manager)
