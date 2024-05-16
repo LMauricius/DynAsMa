@@ -125,6 +125,11 @@ concept DerivedAllocatorWLocality =
         { a.allocate(n, cvp) } -> std::same_as<pointer>;
     };
 
+template <class T, class Arg>
+concept ConstructibleFrom = requires(Arg a) {
+    { new T(a) };
+};
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H

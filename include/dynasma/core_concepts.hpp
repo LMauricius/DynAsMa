@@ -103,6 +103,30 @@ concept Sortable = requires(T a, T b) {
 template <class T>
 concept CacheableSeedLike = ReloadableSeedLike<T> && Sortable<T>;
 
+namespace internal
+{
+
+template <class T, class... Args> struct ConstructibleFromAll_type
+{
+    static constexpr bool value = (ConstructibleFrom<T, Args> && ...);
+};
+
+template <class T, class... Args> struct ConstructibleFromKernel_type;
+template <class T, class... Args> struct ConstructibleFromKernel_type<T, std::variant<Args...>>
+{
+    static constexpr bool value = (ConstructibleFrom<T, Args> && ...);
+};
+
+} // namespace internal
+
+/**
+ * Concept checking if an asset type is constructible from each kernel value.
+ * @tparam T the asset type
+ * @tparam KernelT the kernel type
+ */
+template <class T, class KernelT>
+concept ConstructibleFromKernel = internal::ConstructibleFromKernel_type<T, KernelT>::value;
+
 /**
  * @brief Allocator for type derived from Seed::Asset. The allocator's
  * value_type must be constructible from each of the possible kernel values,
@@ -111,12 +135,9 @@ concept CacheableSeedLike = ReloadableSeedLike<T> && Sortable<T>;
  */
 template <class A, class Seed>
 concept SeededAllocatorLike =
-    DerivedAllocatorLike<A, typename Seed::Asset> && requires(Seed seed) {
-        // Asset needs to be constructible via each of the possible kernel value
-        // types
-        std::visit([](const auto &kerval) { typename A::value_type a(kerval); },
-                   seed.kernel);
-    };
+    DerivedAllocatorLike<A, typename Seed::Asset> &&
+    ConstructibleFromKernel<typename A::value_type, decltype(Seed::kernel)>;
+
 }; // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_CONCEPTS_H
