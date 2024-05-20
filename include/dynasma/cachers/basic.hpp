@@ -1,6 +1,6 @@
 #pragma once
-#ifndef INCLUDED_DYNASMA_MAN_BASIC_H
-#define INCLUDED_DYNASMA_MAN_BASIC_H
+#ifndef INCLUDED_DYNASMA_CACHER_BASIC_H
+#define INCLUDED_DYNASMA_CACHER_BASIC_H
 
 #include "dynasma/cachers/abstract.hpp"
 #include "dynasma/core_concepts.hpp"
@@ -185,4 +185,4 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
 } // namespace dynasma
 
-#endif // INCLUDED_DYNASMA_MAN_BASIC_H
+#endif // INCLUDED_DYNASMA_CACHER_BASIC_H
