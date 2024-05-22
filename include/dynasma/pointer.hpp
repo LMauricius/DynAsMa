@@ -129,6 +129,58 @@ template <AssetLike Asset> class LazyPtr {
         else
             return FirmPtr<Asset>();
     }
+
+    // Comparison operators
+
+    template <AssetLike OthersAsset>
+    bool operator==(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator!=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    }
+
+    template <AssetLike OthersAsset>
+    bool operator==(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator!=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    }
 };
 
 /**
@@ -240,6 +292,60 @@ template <AssetLike Asset> class FirmPtr {
 
         return *this;
     }
+
+    // Comparison operators
+
+    template <AssetLike OthersAsset>
+    bool operator==(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator!=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>=(const FirmPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    }
+
+    template <AssetLike OthersAsset>
+    bool operator==(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator!=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator<=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
+    }
+    template <AssetLike OthersAsset>
+    bool operator>=(const LazyPtr<OthersAsset> &other) {
+        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    }
+
+    // Dereferencing
 
     Asset &operator*() const { return *m_p_asset; }
     Asset *operator->() const { return m_p_asset; }
