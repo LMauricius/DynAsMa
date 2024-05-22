@@ -29,7 +29,12 @@ template <SeedLike Seed> class AbstractKeeper {
      * @returns A LazyPtr to the (to-be-)constructed asset. Cast it to FirmPtr
      * to retrieve the asset
      */
-    virtual LazyPtr<Asset> new_asset(const Seed &seed) = 0;
+    virtual LazyPtr<Asset> new_asset(const Seed &seed) {
+        return new_asset(Seed(seed));
+    }
+    virtual LazyPtr<Asset> new_asset(Seed &&seed) {
+        return new_asset((const Seed &)seed);
+    }
 
     /**
      * @brief Attempts to unload not-firmly-referenced assets to free memory
