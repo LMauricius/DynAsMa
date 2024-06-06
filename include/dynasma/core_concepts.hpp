@@ -12,6 +12,13 @@
 namespace dynasma {
 
 /**
+ * Any type derived from PolymorphicBase. Such types can be cast to
+ * PolymorphicBase for type erasure and safely cast back to the original type
+ */
+template <typename T>
+concept StandardPolymorphic = std::is_base_of<PolymorphicBase, T>::value;
+
+/**
  * An asset, constructible by an asset manager, from a seed kernel.
  * Must have a method memory_cost() returning the size (in bytes) in memory.
  * @example @code
@@ -26,10 +33,9 @@ namespace dynasma {
  * @endcode
  */
 template <typename T>
-concept AssetLike =
-    std::is_base_of<PolymorphicBase, T>::value && requires(const T &a) {
-        { a.memory_cost() } -> std::convertible_to<std::size_t>;
-    };
+concept AssetLike = StandardPolymorphic<T> && requires(const T &a) {
+    { a.memory_cost() } -> std::convertible_to<std::size_t>;
+};
 
 /**
  * An asset seed, used to construct an asset.
