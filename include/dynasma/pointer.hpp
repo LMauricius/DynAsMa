@@ -136,41 +136,41 @@ template <class T> class LazyPtr {
 
     // Comparison operators
 
-    template <class O> bool operator==(const LazyPtr<O> &other) {
+    template <class O> bool operator==(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const LazyPtr<O> &other) {
+    template <class O> bool operator!=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<(const LazyPtr<O> &other) {
+    template <class O> bool operator<(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<=(const LazyPtr<O> &other) {
+    template <class O> bool operator<=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>(const LazyPtr<O> &other) {
+    template <class O> bool operator>(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>=(const LazyPtr<O> &other) {
+    template <class O> bool operator>=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
-    template <class O> bool operator==(const FirmPtr<O> &other) {
+    template <class O> bool operator==(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const FirmPtr<O> &other) {
+    template <class O> bool operator!=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<(const FirmPtr<O> &other) {
+    template <class O> bool operator<(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<=(const FirmPtr<O> &other) {
+    template <class O> bool operator<=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>(const FirmPtr<O> &other) {
+    template <class O> bool operator>(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>=(const FirmPtr<O> &other) {
+    template <class O> bool operator>=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 };
@@ -287,41 +287,41 @@ template <class T> class FirmPtr {
 
     // Comparison operators
 
-    template <class O> bool operator==(const FirmPtr<O> &other) {
+    template <class O> bool operator==(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const FirmPtr<O> &other) {
+    template <class O> bool operator!=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<(const FirmPtr<O> &other) {
+    template <class O> bool operator<(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<=(const FirmPtr<O> &other) {
+    template <class O> bool operator<=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>(const FirmPtr<O> &other) {
+    template <class O> bool operator>(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>=(const FirmPtr<O> &other) {
+    template <class O> bool operator>=(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
-    template <class O> bool operator==(const LazyPtr<O> &other) {
+    template <class O> bool operator==(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const LazyPtr<O> &other) {
+    template <class O> bool operator!=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<(const LazyPtr<O> &other) {
+    template <class O> bool operator<(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <class O> bool operator<=(const LazyPtr<O> &other) {
+    template <class O> bool operator<=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>(const LazyPtr<O> &other) {
+    template <class O> bool operator>(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <class O> bool operator>=(const LazyPtr<O> &other) {
+    template <class O> bool operator>=(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
