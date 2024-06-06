@@ -20,18 +20,18 @@ template <class T>
 using TypeErasedReferenceCounter =
     ReferenceCounter<typename CopyCV<T, PolymorphicBase>::type>;
 
-template <AssetLike Asset> class FirmPtr;
+template <class T> class FirmPtr;
 
 /**
- * @brief A lazy reference to an asset. Doesn't ensure the asset is loaded.
- * @note must be cast to a FirmPtr to access the asset.
+ * @brief A lazy reference to an object. Doesn't ensure the object is loaded.
+ * @note must be cast to a FirmPtr to access the object.
  */
-template <AssetLike Asset> class LazyPtr {
+template <class T> class LazyPtr {
     // type-erased reference counter.
-    using RefCtr = TypeErasedReferenceCounter<Asset>;
+    using RefCtr = TypeErasedReferenceCounter<T>;
 
-    template <AssetLike T> friend class LazyPtr;
-    template <AssetLike T> friend class FirmPtr;
+    template <class O> friend class LazyPtr;
+    template <class O> friend class FirmPtr;
 
     RefCtr *m_p_ctr;
 
@@ -40,31 +40,35 @@ template <AssetLike Asset> class LazyPtr {
     LazyPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
-    // The ctr must produce instances derived from Asset
-    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.lazy_hold(); }
+    // The ctr must produce instances derived from T, otherwise causes U.B.
+    LazyPtr(RefCtr &ctr)
+        requires StandardPolymorphic<T>
+        : m_p_ctr(&ctr) {
+        ctr.lazy_hold();
+    }
 
     // Copy & Move constructors for LazyPtr
 
-    // LazyPtr<Asset> &
-    template <AssetLike OthersAsset>
-    LazyPtr(const LazyPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr<T> &
+    template <class O>
+    LazyPtr(const LazyPtr<O> &other)
+        requires PointerCastable<T, O>
         : LazyPtr(*other.m_p_ctr) {}
 
-    // LazyPtr<Asset> &&
-    template <AssetLike OthersAsset>
-    LazyPtr(LazyPtr<OthersAsset> &&other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr<T> &&
+    template <class O>
+    LazyPtr(LazyPtr<O> &&other)
+        requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr) {
         other.m_p_ctr = nullptr;
     }
 
     // Copy & Move constructors for FirmPtr
 
-    // FirmPtr<Asset> &
-    template <AssetLike OthersAsset>
-    LazyPtr(const FirmPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // FirmPtr<T> &
+    template <class O>
+    LazyPtr(const FirmPtr<O> &other)
+        requires PointerCastable<T, O>
         : LazyPtr(*other.m_p_ctr) {}
 
     ~LazyPtr() {
@@ -74,10 +78,10 @@ template <AssetLike Asset> class LazyPtr {
 
     // Copy & Move assignment for LazyPtr
 
-    // LazyPtr<Asset> &
-    template <AssetLike OthersAsset>
-    LazyPtr &operator=(const LazyPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr<T> &
+    template <class O>
+    LazyPtr &operator=(const LazyPtr<O> &other)
+        requires PointerCastable<T, O>
     {
         if (m_p_ctr)
             m_p_ctr.lazy_release();
@@ -90,10 +94,10 @@ template <AssetLike Asset> class LazyPtr {
         return *this;
     }
 
-    // LazyPtr<Asset> &&
-    template <AssetLike OthersAsset>
-    LazyPtr &operator=(LazyPtr<OthersAsset> &&other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr<T> &&
+    template <class O>
+    LazyPtr &operator=(LazyPtr<O> &&other)
+        requires PointerCastable<T, O>
     {
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = nullptr;
@@ -103,10 +107,10 @@ template <AssetLike Asset> class LazyPtr {
 
     // Copy & Move assignment for FirmPtr
 
-    // FirmPtr<Asset> &
-    template <AssetLike OthersAsset>
-    LazyPtr &operator=(const FirmPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // FirmPtr<T> &
+    template <class O>
+    LazyPtr &operator=(const FirmPtr<O> &other)
+        requires PointerCastable<T, O>
     {
         if (m_p_ctr)
             m_p_ctr->lazy_release();
@@ -120,120 +124,108 @@ template <AssetLike Asset> class LazyPtr {
     }
 
     /**
-     * @brief Ensures the asset is loaded before storing it into a FirmPtr
-     * @returns a FirmPtr to the asset
+     * @brief Ensures the object is loaded before storing it into a FirmPtr
+     * @returns a FirmPtr to the object
      */
-    FirmPtr<Asset> getLoaded() const {
+    FirmPtr<T> getLoaded() const {
         if (m_p_ctr)
-            return FirmPtr<Asset>(*m_p_ctr);
+            return FirmPtr<T>(*m_p_ctr);
         else
-            return FirmPtr<Asset>();
+            return FirmPtr<T>();
     }
 
     // Comparison operators
 
-    template <AssetLike OthersAsset>
-    bool operator==(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator==(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator!=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator!=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator<(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator<=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator>(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator>=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
-    template <AssetLike OthersAsset>
-    bool operator==(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator==(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator!=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator!=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator<(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator<=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator>(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator>=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 };
 
 /**
- * @brief A firm reference to an asset. Ensures the asset is loaded.
- * @note Can be used like a pointer to the asset.
+ * @brief A firm reference to an object. Ensures the object is loaded.
+ * @note Can be used like a pointer to the object.
  */
-template <AssetLike Asset> class FirmPtr {
+template <class T> class FirmPtr {
     // type-erased reference counter.
-    using RefCtr = TypeErasedReferenceCounter<Asset>;
+    using RefCtr = TypeErasedReferenceCounter<T>;
 
-    template <AssetLike T> friend class LazyPtr;
-    template <AssetLike T> friend class FirmPtr;
+    template <class O> friend class LazyPtr;
+    template <class O> friend class FirmPtr;
 
     RefCtr *m_p_ctr;
-    Asset *m_p_asset;
+    T *m_p_object;
 
   public:
     // Default constructor
     FirmPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
-    // The ctr must produce instances derived from Asset
+    // The ctr must produce instances derived from T, otherwise causes U.B.
     FirmPtr(RefCtr &ctr)
+        requires StandardPolymorphic<T>
         : m_p_ctr(&ctr),
-          m_p_asset(
+          m_p_object(
               // assume the casting is possible, i.e. we have a valid pointer
               // can be dereferenced -> is not nullptr
               // this could be used to optimize for non-virtual inheritances
-              &*dynamic_cast<Asset *>(&ctr.hold())) {}
+              &*dynamic_cast<T *>(&ctr.hold())) {}
 
     // Copy & move constructors for FirmPtr
 
-    // FirmPtr<Asset> &
-    template <AssetLike OthersAsset>
-    FirmPtr(const FirmPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // FirmPtr<T> &
+    template <class O>
+    FirmPtr(const FirmPtr<O> &other)
+        requires PointerCastable<T, O>
         : FirmPtr(*other.m_p_ctr) {}
 
-    // FirmPtr<Asset> &&
-    template <AssetLike OthersAsset>
-    FirmPtr(FirmPtr<OthersAsset> &&other)
-        requires PointerCastable<Asset, OthersAsset>
-        : m_p_ctr(other.m_p_ctr),
-          m_p_asset(dynamic_cast<Asset *>(other.m_p_ctr)) {
+    // FirmPtr<T> &&
+    template <class O>
+    FirmPtr(FirmPtr<O> &&other)
+        requires PointerCastable<T, O>
+        : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(other.m_p_ctr)) {
         other.m_p_ctr = nullptr;
     }
 
     // Copy & move constructor for LazyPtr
 
-    // LazyPtr<Asset> &
-    template <AssetLike OthersAsset>
-    FirmPtr(const LazyPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr<T> &
+    template <class O>
+    FirmPtr(const LazyPtr<O> &other)
+        requires PointerCastable<T, O>
         : FirmPtr(*other.m_p_ctr) {}
 
     ~FirmPtr() {
@@ -243,10 +235,10 @@ template <AssetLike Asset> class FirmPtr {
 
     // copy & move assignment for FirmPtr
 
-    // FirmPtr<Asset> &
-    template <AssetLike OthersAsset>
-    FirmPtr &operator=(const FirmPtr<OthersAsset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // FirmPtr<T> &
+    template <class O>
+    FirmPtr &operator=(const FirmPtr<O> &other)
+        requires PointerCastable<T, O>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -254,15 +246,15 @@ template <AssetLike Asset> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_asset = m_p_ctr.take();
+            m_p_object = m_p_ctr.take();
 
         return *this;
     }
 
-    // FirmPtr<Asset> &&
-    template <AssetLike OthersAsset>
-    FirmPtr &operator=(FirmPtr<OthersAsset> &&other)
-        requires PointerCastable<Asset, OthersAsset>
+    // FirmPtr<T> &&
+    template <class O>
+    FirmPtr &operator=(FirmPtr<O> &&other)
+        requires PointerCastable<T, O>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -270,17 +262,17 @@ template <AssetLike Asset> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = nullptr;
 
-        m_p_asset = other.m_p_asset;
+        m_p_object = other.m_p_object;
 
         return *this;
     }
 
     // Copy & move assignment for LazyPtr
 
-    // LazyPtr&<Asset> &
-    template <AssetLike OthersAsset>
-    FirmPtr &operator=(const LazyPtr<Asset> &other)
-        requires PointerCastable<Asset, OthersAsset>
+    // LazyPtr&<T> &
+    template <class O>
+    FirmPtr &operator=(const LazyPtr<T> &other)
+        requires PointerCastable<T, O>
     {
         if (m_p_ctr)
             m_p_ctr.release();
@@ -288,67 +280,55 @@ template <AssetLike Asset> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_asset = m_p_ctr.take();
+            m_p_object = m_p_ctr.take();
 
         return *this;
     }
 
     // Comparison operators
 
-    template <AssetLike OthersAsset>
-    bool operator==(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator==(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator!=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator!=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator<(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator<=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator>(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>=(const FirmPtr<OthersAsset> &other) {
+    template <class O> bool operator>=(const FirmPtr<O> &other) {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
-    template <AssetLike OthersAsset>
-    bool operator==(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator==(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator!=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator!=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator<(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator<=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator<=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator>(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
     }
-    template <AssetLike OthersAsset>
-    bool operator>=(const LazyPtr<OthersAsset> &other) {
+    template <class O> bool operator>=(const LazyPtr<O> &other) {
         return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
     }
 
     // Dereferencing
 
-    Asset &operator*() const { return *m_p_asset; }
-    Asset *operator->() const { return m_p_asset; }
+    T &operator*() const { return *m_p_object; }
+    T *operator->() const { return m_p_object; }
 };
 
 } // namespace dynasma
