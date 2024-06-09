@@ -13,8 +13,7 @@ namespace dynasma {
 
 template <class To, class From>
 concept PointerCastable =
-    (std::is_same_v<std::decay_t<From>, std::decay_t<To>> ||
-     std::derived_from<std::decay_t<From>, std::decay_t<To>>) &&
+    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
     MoreOrEquallyCVQualified<To, From>;
 
 template <class T>
@@ -51,12 +50,20 @@ template <class T> class LazyPtr {
     // Copy & Move constructors for LazyPtr
 
     // LazyPtr<T> &
+    LazyPtr(const LazyPtr<T> &other) : LazyPtr(*other.m_p_ctr) {}
+
+    // LazyPtr<T> &&
+    LazyPtr(LazyPtr<T> &&other) : m_p_ctr(other.m_p_ctr) {
+        other.m_p_ctr = nullptr;
+    }
+
+    // LazyPtr<O> &
     template <class O>
     LazyPtr(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
         : LazyPtr(*other.m_p_ctr) {}
 
-    // LazyPtr<T> &&
+    // LazyPtr<O> &&
     template <class O>
     LazyPtr(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
@@ -67,6 +74,9 @@ template <class T> class LazyPtr {
     // Copy & Move constructors for FirmPtr
 
     // FirmPtr<T> &
+    LazyPtr(const FirmPtr<T> &other) : LazyPtr(*other.m_p_ctr) {}
+
+    // FirmPtr<O> &
     template <class O>
     LazyPtr(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
@@ -80,6 +90,27 @@ template <class T> class LazyPtr {
     // Copy & Move assignment for LazyPtr
 
     // LazyPtr<T> &
+    LazyPtr &operator=(const LazyPtr<T> &other) {
+        if (m_p_ctr)
+            m_p_ctr.lazy_release();
+
+        m_p_ctr = other.m_p_ctr;
+
+        if (m_p_ctr)
+            m_p_ctr.lazy_take();
+
+        return *this;
+    }
+
+    // LazyPtr<T> &&
+    LazyPtr &operator=(LazyPtr<T> &&other) {
+        m_p_ctr = other.m_p_ctr;
+        other.m_p_ctr = nullptr;
+
+        return *this;
+    }
+
+    // LazyPtr<O> &
     template <class O>
     LazyPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
@@ -95,7 +126,7 @@ template <class T> class LazyPtr {
         return *this;
     }
 
-    // LazyPtr<T> &&
+    // LazyPtr<O> &&
     template <class O>
     LazyPtr &operator=(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
@@ -109,6 +140,19 @@ template <class T> class LazyPtr {
     // Copy & Move assignment for FirmPtr
 
     // FirmPtr<T> &
+    LazyPtr &operator=(const FirmPtr<T> &other) {
+        if (m_p_ctr)
+            m_p_ctr->lazy_release();
+
+        m_p_ctr = other.m_p_ctr;
+
+        if (m_p_ctr)
+            m_p_ctr->lazy_hold();
+
+        return *this;
+    }
+
+    // FirmPtr<O> &
     template <class O>
     LazyPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
@@ -208,12 +252,21 @@ template <class T> class FirmPtr {
     // Copy & move constructors for FirmPtr
 
     // FirmPtr<T> &
+    FirmPtr(const FirmPtr<T> &other) : FirmPtr(*other.m_p_ctr) {}
+
+    // FirmPtr<T> &&
+    FirmPtr(FirmPtr<T> &&other)
+        : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(other.m_p_ctr)) {
+        other.m_p_ctr = nullptr;
+    }
+
+    // FirmPtr<O> &
     template <class O>
     FirmPtr(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
         : FirmPtr(*other.m_p_ctr) {}
 
-    // FirmPtr<T> &&
+    // FirmPtr<O> &&
     template <class O>
     FirmPtr(FirmPtr<O> &&other)
         requires PointerCastable<T, O>
@@ -224,6 +277,9 @@ template <class T> class FirmPtr {
     // Copy & move constructor for LazyPtr
 
     // LazyPtr<T> &
+    FirmPtr(const LazyPtr<T> &other) : FirmPtr(*other.m_p_ctr) {}
+
+    // LazyPtr<O> &
     template <class O>
     FirmPtr(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
@@ -237,6 +293,32 @@ template <class T> class FirmPtr {
     // copy & move assignment for FirmPtr
 
     // FirmPtr<T> &
+    FirmPtr &operator=(const FirmPtr<T> &other) {
+        if (m_p_ctr)
+            m_p_ctr.release();
+
+        m_p_ctr = other.m_p_ctr;
+
+        if (m_p_ctr)
+            m_p_object = m_p_ctr.take();
+
+        return *this;
+    }
+
+    // FirmPtr<T> &&
+    FirmPtr &operator=(FirmPtr<T> &&other) {
+        if (m_p_ctr)
+            m_p_ctr.release();
+
+        m_p_ctr = other.m_p_ctr;
+        other.m_p_ctr = nullptr;
+
+        m_p_object = other.m_p_object;
+
+        return *this;
+    }
+
+    // FirmPtr<O> &
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
@@ -252,7 +334,7 @@ template <class T> class FirmPtr {
         return *this;
     }
 
-    // FirmPtr<T> &&
+    // FirmPtr<O> &&
     template <class O>
     FirmPtr &operator=(FirmPtr<O> &&other)
         requires PointerCastable<T, O>
@@ -271,8 +353,21 @@ template <class T> class FirmPtr {
     // Copy & move assignment for LazyPtr
 
     // LazyPtr&<T> &
+    FirmPtr &operator=(const LazyPtr<T> &other) {
+        if (m_p_ctr)
+            m_p_ctr.release();
+
+        m_p_ctr = other.m_p_ctr;
+
+        if (m_p_ctr)
+            m_p_object = m_p_ctr.take();
+
+        return *this;
+    }
+
+    // LazyPtr&<O> &
     template <class O>
-    FirmPtr &operator=(const LazyPtr<T> &other)
+    FirmPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
