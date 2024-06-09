@@ -92,12 +92,12 @@ template <class T> class LazyPtr {
     // LazyPtr<T> &
     LazyPtr &operator=(const LazyPtr<T> &other) {
         if (m_p_ctr)
-            m_p_ctr.lazy_release();
+            m_p_ctr->lazy_release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr.lazy_take();
+            m_p_ctr->lazy_take();
 
         return *this;
     }
@@ -116,12 +116,12 @@ template <class T> class LazyPtr {
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
-            m_p_ctr.lazy_release();
+            m_p_ctr->lazy_release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr.lazy_take();
+            m_p_ctr->lazy_take();
 
         return *this;
     }
@@ -295,12 +295,12 @@ template <class T> class FirmPtr {
     // FirmPtr<T> &
     FirmPtr &operator=(const FirmPtr<T> &other) {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr.take();
+            m_p_object = m_p_ctr->take();
 
         return *this;
     }
@@ -308,7 +308,7 @@ template <class T> class FirmPtr {
     // FirmPtr<T> &&
     FirmPtr &operator=(FirmPtr<T> &&other) {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = nullptr;
@@ -324,12 +324,12 @@ template <class T> class FirmPtr {
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr.take();
+            m_p_object = m_p_ctr->take();
 
         return *this;
     }
@@ -340,7 +340,7 @@ template <class T> class FirmPtr {
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = nullptr;
@@ -355,12 +355,12 @@ template <class T> class FirmPtr {
     // LazyPtr&<T> &
     FirmPtr &operator=(const LazyPtr<T> &other) {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr.take();
+            m_p_object = m_p_ctr->take();
 
         return *this;
     }
@@ -371,12 +371,12 @@ template <class T> class FirmPtr {
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
-            m_p_ctr.release();
+            m_p_ctr->release();
 
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr.take();
+            m_p_object = m_p_ctr->take();
 
         return *this;
     }
