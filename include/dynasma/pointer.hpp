@@ -13,7 +13,8 @@ namespace dynasma {
 
 template <class To, class From>
 concept PointerCastable =
-    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
+    (std::is_same_v<std::decay_t<From>, std::decay_t<To>> ||
+     std::derived_from<std::decay_t<From>, std::decay_t<To>>) &&
     MoreOrEquallyCVQualified<To, From>;
 
 template <class T>
