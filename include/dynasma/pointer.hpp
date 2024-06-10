@@ -437,54 +437,68 @@ template <class T> class FirmPtr {
 
     // Pointer casting functions
 
-    template <class To, class From>
-    friend FirmPtr<To> static_pointer_cast(const FirmPtr<From> &from) {
-        return FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
-    }
-    template <class To, class From>
-    friend FirmPtr<To> static_pointer_cast(FirmPtr<From> &&from) {
-        auto ret =
-            FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
-        from.m_p_ctr = nullptr;
-        return ret;
-    }
-    template <class To, class From>
-    friend FirmPtr<To> dynamic_pointer_cast(const FirmPtr<From> &from) {
-        // we cast the reference, not a pointer, so it throws on errors
-        return FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To>(*from.m_p_object));
-    }
-    template <class To, class From>
-    friend FirmPtr<To> dynamic_pointer_cast(FirmPtr<From> &&from) {
-        // we cast the reference, not a pointer, so it throws on errors
-        auto ret =
-            FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To>(*from.m_p_object));
-        from.m_p_ctr = nullptr;
-        return ret;
-    }
-    template <class To, class From>
-    friend FirmPtr<To> const_pointer_cast(const FirmPtr<From> &from) {
-        return FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
-    }
-    template <class To, class From>
-    friend FirmPtr<To> const_pointer_cast(FirmPtr<From> &&from) {
-        auto ret =
-            FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
-        from.m_p_ctr = nullptr;
-        return ret;
-    }
-    template <class To, class From>
-    friend FirmPtr<To> reinterpret_pointer_cast(const FirmPtr<From> &from) {
-        return FirmPtr<To>(*from.m_p_ctr,
-                           reinterpret_cast<To *>(from.m_p_object));
-    }
-    template <class To, class From>
-    friend FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
-        auto ret =
-            FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
-        from.m_p_ctr = nullptr;
-        return ret;
-    }
+    template <class To, class Fr>
+    friend FirmPtr<To> static_pointer_cast(const FirmPtr<Fr> &);
+    template <class To, class Fr>
+    friend FirmPtr<To> static_pointer_cast(FirmPtr<Fr> &&);
+    template <class To, class Fr>
+    friend FirmPtr<To> dynamic_pointer_cast(const FirmPtr<Fr> &);
+    template <class To, class Fr>
+    friend FirmPtr<To> dynamic_pointer_cast(FirmPtr<Fr> &&);
+    template <class To, class Fr>
+    friend FirmPtr<To> const_pointer_cast(const FirmPtr<Fr> &);
+    template <class To, class Fr>
+    friend FirmPtr<To> const_pointer_cast(FirmPtr<Fr> &&);
+    template <class To, class Fr>
+    friend FirmPtr<To> reinterpret_pointer_cast(const FirmPtr<Fr> &);
+    template <class To, class Fr>
+    friend FirmPtr<To> reinterpret_pointer_cast(FirmPtr<Fr> &&);
 };
+
+template <class To, class From>
+FirmPtr<To> static_pointer_cast(const FirmPtr<From> &from) {
+    return FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+}
+template <class To, class From>
+FirmPtr<To> static_pointer_cast(FirmPtr<From> &&from) {
+    auto ret = FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+    from.m_p_ctr = nullptr;
+    return ret;
+}
+template <class To, class From>
+FirmPtr<To> dynamic_pointer_cast(const FirmPtr<From> &from) {
+    // we cast the reference, not a pointer, so it throws on errors
+    return FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
+}
+template <class To, class From>
+FirmPtr<To> dynamic_pointer_cast(FirmPtr<From> &&from) {
+    // we cast the reference, not a pointer, so it throws on errors
+    auto ret =
+        FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
+    from.m_p_ctr = nullptr;
+    return ret;
+}
+template <class To, class From>
+FirmPtr<To> const_pointer_cast(const FirmPtr<From> &from) {
+    return FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+}
+template <class To, class From>
+FirmPtr<To> const_pointer_cast(FirmPtr<From> &&from) {
+    auto ret = FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+    from.m_p_ctr = nullptr;
+    return ret;
+}
+template <class To, class From>
+FirmPtr<To> reinterpret_pointer_cast(const FirmPtr<From> &from) {
+    return FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
+}
+template <class To, class From>
+FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
+    auto ret =
+        FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
+    from.m_p_ctr = nullptr;
+    return ret;
+}
 
 } // namespace dynasma
 
