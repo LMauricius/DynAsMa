@@ -97,7 +97,7 @@ template <class T> class LazyPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr->lazy_take();
+            m_p_ctr->lazy_hold();
 
         return *this;
     }
@@ -121,7 +121,7 @@ template <class T> class LazyPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_ctr->lazy_take();
+            m_p_ctr->lazy_hold();
 
         return *this;
     }
@@ -300,7 +300,7 @@ template <class T> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr->take();
+            m_p_object = m_p_ctr->hold();
 
         return *this;
     }
@@ -329,7 +329,7 @@ template <class T> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr->take();
+            m_p_object = m_p_ctr->hold();
 
         return *this;
     }
@@ -360,7 +360,7 @@ template <class T> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr->take();
+            m_p_object = m_p_ctr->hold();
 
         return *this;
     }
@@ -376,7 +376,7 @@ template <class T> class FirmPtr {
         m_p_ctr = other.m_p_ctr;
 
         if (m_p_ctr)
-            m_p_object = m_p_ctr->take();
+            m_p_object = m_p_ctr->hold();
 
         return *this;
     }
