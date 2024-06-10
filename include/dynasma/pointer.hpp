@@ -234,6 +234,15 @@ template <class T> class FirmPtr {
     RefCtr *m_p_ctr;
     T *m_p_object;
 
+    // Internal constructor for when we know both the counter and the object
+    // The object must have been produced by the ctr, otherwise causes U.B.
+    FirmPtr(RefCtr &ctr, T *p_object)
+        requires StandardPolymorphic<T>
+        : m_p_ctr(&ctr), m_p_object(p_object) {
+        // still need to reference count
+        m_p_ctr->hold();
+    }
+
   public:
     // Default constructor
     FirmPtr() : m_p_ctr(nullptr) {}
@@ -425,6 +434,56 @@ template <class T> class FirmPtr {
 
     T &operator*() const { return *m_p_object; }
     T *operator->() const { return m_p_object; }
+
+    // Pointer casting functions
+
+    template <class To, class From>
+    friend FirmPtr<To> static_pointer_cast(const FirmPtr<From> &from) {
+        return FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+    }
+    template <class To, class From>
+    friend FirmPtr<To> static_pointer_cast(FirmPtr<From> &&from) {
+        auto ret =
+            FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+        from.m_p_ctr = nullptr;
+        return ret;
+    }
+    template <class To, class From>
+    friend FirmPtr<To> dynamic_pointer_cast(const FirmPtr<From> &from) {
+        // we cast the reference, not a pointer, so it throws on errors
+        return FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To>(*from.m_p_object));
+    }
+    template <class To, class From>
+    friend FirmPtr<To> dynamic_pointer_cast(FirmPtr<From> &&from) {
+        // we cast the reference, not a pointer, so it throws on errors
+        auto ret =
+            FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To>(*from.m_p_object));
+        from.m_p_ctr = nullptr;
+        return ret;
+    }
+    template <class To, class From>
+    friend FirmPtr<To> const_pointer_cast(const FirmPtr<From> &from) {
+        return FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+    }
+    template <class To, class From>
+    friend FirmPtr<To> const_pointer_cast(FirmPtr<From> &&from) {
+        auto ret =
+            FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+        from.m_p_ctr = nullptr;
+        return ret;
+    }
+    template <class To, class From>
+    friend FirmPtr<To> reinterpret_pointer_cast(const FirmPtr<From> &from) {
+        return FirmPtr<To>(*from.m_p_ctr,
+                           reinterpret_cast<To *>(from.m_p_object));
+    }
+    template <class To, class From>
+    friend FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
+        auto ret =
+            FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
+        from.m_p_ctr = nullptr;
+        return ret;
+    }
 };
 
 } // namespace dynasma
