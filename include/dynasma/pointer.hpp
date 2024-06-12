@@ -17,8 +17,7 @@ concept PointerCastable =
     MoreOrEquallyCVQualified<To, From>;
 
 template <class T>
-using TypeErasedReferenceCounter =
-    ReferenceCounter<typename CopyCV<T, PolymorphicBase>::type>;
+using TypeErasedReferenceCounter = ReferenceCounter<PolymorphicBase>;
 
 template <class T> class FirmPtr;
 
