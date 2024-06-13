@@ -16,10 +16,10 @@ class StandaloneRefCtr : public TypeErasedReferenceCounter<T> {
     void handle_forgettable_impl() override { delete this; }
 
   public:
-    template <class... Params> ProxyRefCtr(Params... params) {
+    template <class... Params> StandaloneRefCtr(Params... params) {
         this->p_obj = new T(params...);
     }
-    ~ProxyRefCtr() { delete this->p_obj; }
+    ~StandaloneRefCtr() { delete this->p_obj; }
 };
 
 } // namespace internal
