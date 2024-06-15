@@ -264,7 +264,7 @@ template <class T> class FirmPtr {
 
     // FirmPtr<T> &&
     FirmPtr(FirmPtr<T> &&other)
-        : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(other.m_p_ctr)) {
+        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr = nullptr;
     }
 
@@ -278,7 +278,8 @@ template <class T> class FirmPtr {
     template <class O>
     FirmPtr(FirmPtr<O> &&other)
         requires PointerCastable<T, O>
-        : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(other.m_p_ctr)) {
+        : m_p_ctr(other.m_p_ctr),
+          m_p_object(dynamic_cast<T *>(other.m_p_object)) {
         other.m_p_ctr = nullptr;
     }
 
