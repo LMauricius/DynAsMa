@@ -8,23 +8,27 @@ namespace dynasma {
 
 namespace internal {
 
-template <AssetLike T>
+template <StandardPolymorphic T>
 class StandaloneRefCtr : public TypeErasedReferenceCounter<T> {
   protected:
     void handle_usable_impl() override {}
     void handle_unloadable_impl() override {}
     void handle_forgettable_impl() override { delete this; }
 
+    T m_obj;
+
   public:
-    template <class... Params> StandaloneRefCtr(Params... params) {
-        this->p_obj = new T(params...);
+    template <class... Params>
+    StandaloneRefCtr(Params... params)
+        : m_obj(std::forward<Params>(params)...) {
+        this->p_obj = &(this->m_obj);
     }
-    ~StandaloneRefCtr() { delete this->p_obj; }
+    ~StandaloneRefCtr() {}
 };
 
 } // namespace internal
 
-template <AssetLike T, class... Params>
+template <StandardPolymorphic T, class... Params>
 FirmPtr<T> makeStandalone(Params... params) {
     return FirmPtr<T>(
         *(new internal::StandaloneRefCtr<T>(std::forward<Params>(params)...)));
