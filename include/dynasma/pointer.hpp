@@ -40,11 +40,7 @@ template <class T> class LazyPtr {
 
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
-    LazyPtr(RefCtr &ctr)
-        requires StandardPolymorphic<T>
-        : m_p_ctr(&ctr) {
-        ctr.lazy_hold();
-    }
+    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.lazy_hold(); }
 
     // Copy & Move constructors for LazyPtr
 
@@ -235,9 +231,7 @@ template <class T> class FirmPtr {
 
     // Internal constructor for when we know both the counter and the object
     // The object must have been produced by the ctr, otherwise causes U.B.
-    FirmPtr(RefCtr &ctr, T *p_object)
-        requires StandardPolymorphic<T>
-        : m_p_ctr(&ctr), m_p_object(p_object) {
+    FirmPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {
         // still need to reference count
         m_p_ctr->hold();
     }
@@ -249,7 +243,6 @@ template <class T> class FirmPtr {
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
     FirmPtr(RefCtr &ctr)
-        requires StandardPolymorphic<T>
         : m_p_ctr(&ctr),
           m_p_object(
               // assume the casting is possible, i.e. we have a valid pointer
