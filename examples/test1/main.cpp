@@ -26,9 +26,6 @@ struct TestSeed {
 template <template <typename, typename> typename Manager> void testManager() {
     Manager<TestSeed, std::allocator<TestAsset>> manager;
 
-    const TestSeed seed1{"<My asset 1>"};
-    const TestSeed seed2{"<My asset 2>"};
-
     dynasma::LazyPtr<TestAsset> lazyPtr1;
     dynasma::LazyPtr<TestAsset> lazyPtr2;
 
@@ -37,7 +34,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Entered block!\n";
 
         std::cout << "    Registering asset 1...\n";
-        lazyPtr1 = manager.register_asset(seed1);
+        lazyPtr1 = manager.register_asset_k("<My asset 1>");
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking firm reference...\n";
@@ -55,7 +52,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Entered block!\n";
 
         std::cout << "    Registering asset 2...\n";
-        lazyPtr2 = manager.register_asset(seed2);
+        lazyPtr2 = manager.register_asset_k("<My asset 2>");
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking firm reference...\n";

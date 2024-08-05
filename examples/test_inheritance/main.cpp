@@ -43,9 +43,7 @@ struct TestSeed {
 int main() {
     dynasma::BasicManager<TestSeed, std::allocator<TestAssetDerived>> mgr;
 
-    TestSeed seed{"<My asset 1>"};
-
-    auto lazyPtr = mgr.register_asset(seed);
+    auto lazyPtr = mgr.register_asset_k("<My asset 1>");
     auto firmPtr = lazyPtr.getLoaded();
 
     return 0;
