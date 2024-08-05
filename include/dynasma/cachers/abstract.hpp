@@ -34,6 +34,24 @@ template <CacheableSeedLike Seed> class AbstractCacher {
     }
 
     /**
+     * @brief constructs and registers a seed from the given kernel value
+     * @tparam ValueT the type of the kernel value
+     * @param value the kernel value
+     * @returns A LazyPtr to the (to-be-)constructed asset. Cast it to FirmPtr
+     * to retrieve the asset
+     */
+    template <class ValueT>
+        requires SeedConstructibleFromKernelValue<Seed, ValueT>
+    LazyPtr<Asset> retrieve_asset_k(const ValueT &value) {
+        return retrieve_asset(Seed{.kernel = value});
+    }
+    template <class ValueT>
+        requires SeedConstructibleFromKernelValue<Seed, ValueT>
+    LazyPtr<Asset> retrieve_asset_k(ValueT &&value) {
+        return retrieve_asset(Seed{.kernel = std::forward<ValueT>(value)});
+    }
+
+    /**
      * @brief Attempts to unload not-firmly-referenced assets to free memory
      * @param bytenum the number of bytes to attempt to free from memory
      */
