@@ -112,26 +112,22 @@ concept CacheableSeedLike = ReloadableSeedLike<T> && Sortable<T>;
 namespace internal
 {
 
-template <class T, class... Args> struct ConstructibleFromAll_type
-{
-    static constexpr bool value = (ConstructibleFrom<T, Args> && ...);
-};
-
-template <class T, class... Args> struct ConstructibleFromKernel_type;
-template <class T, class... Args> struct ConstructibleFromKernel_type<T, std::variant<Args...>>
-{
+template <class T, class... Args> struct ConstructibleFromVariantOptions_type;
+template <class T, class... Args>
+struct ConstructibleFromVariantOptions_type<T, std::variant<Args...>> {
     static constexpr bool value = (ConstructibleFrom<T, Args> && ...);
 };
 
 } // namespace internal
 
 /**
- * Concept checking if an asset type is constructible from each kernel value.
+ * Concept checking if an asset type is constructible from each variant value.
  * @tparam T the asset type
- * @tparam KernelT the kernel type
+ * @tparam VariantT the variant type
  */
-template <class T, class KernelT>
-concept ConstructibleFromKernel = internal::ConstructibleFromKernel_type<T, KernelT>::value;
+template <class T, class VariantT>
+concept ConstructibleFromVariantOptions =
+    internal::ConstructibleFromVariantOptions_type<T, VariantT>::value;
 
 /**
  * @brief Allocator for type derived from Seed::Asset. The allocator's
@@ -142,7 +138,8 @@ concept ConstructibleFromKernel = internal::ConstructibleFromKernel_type<T, Kern
 template <class A, class Seed>
 concept SeededAllocatorLike =
     DerivedAllocatorLike<A, typename Seed::Asset> &&
-    ConstructibleFromKernel<typename A::value_type, decltype(Seed::kernel)>;
+    ConstructibleFromVariantOptions<typename A::value_type,
+                                    decltype(Seed::kernel)>;
 
 }; // namespace dynasma
 
