@@ -141,6 +141,16 @@ concept SeededAllocatorLike =
     ConstructibleFromVariantOptions<typename A::value_type,
                                     decltype(Seed::kernel)>;
 
+/**
+ * @brief A seed can be constructed by assigning only its kernel to a value
+ * @param Seed the seed type
+ * @param KernelValueT the kernel value type
+ */
+template <class Seed, class KernelValueT>
+concept SeedConstructibleFromKernelValue = requires(KernelValueT v) {
+    { new Seed{.kernel = v} };
+};
+
 }; // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_CONCEPTS_H
