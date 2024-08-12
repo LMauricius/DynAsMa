@@ -25,7 +25,10 @@ template <class T> class FirmPtr;
  * @brief A lazy reference to an object. Doesn't ensure the object is loaded.
  * @note must be cast to a FirmPtr to access the object.
  */
-template <class T> class LazyPtr {
+template <class T> class LazyPtr
+{
+    friend std::hash<LazyPtr>;
+
     // type-erased reference counter.
     using RefCtr = TypeErasedReferenceCounter<T>;
 
@@ -219,7 +222,10 @@ template <class T> class LazyPtr {
  * @brief A firm reference to an object. Ensures the object is loaded.
  * @note Can be used like a pointer to the object.
  */
-template <class T> class FirmPtr {
+template <class T> class FirmPtr
+{
+    friend std::hash<FirmPtr>;
+
     // type-erased reference counter.
     using RefCtr = TypeErasedReferenceCounter<T>;
 
@@ -494,5 +500,17 @@ FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
 }
 
 } // namespace dynasma
+
+namespace std
+{
+template <class T> struct hash<dynasma::LazyPtr<T>>
+{
+    size_t operator()(const dynasma::LazyPtr<T> &x) const { return (size_t)x.m_p_ctr; }
+};
+template <class T> struct hash<dynasma::FirmPtr<T>>
+{
+    size_t operator()(const dynasma::FirmPtr<T> &x) const { return (size_t)x.m_p_ctr; }
+};
+} // namespace std
 
 #endif // INCLUDED_DYNASMA_POINTER_H
