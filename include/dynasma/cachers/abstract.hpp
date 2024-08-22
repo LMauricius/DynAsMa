@@ -4,6 +4,7 @@
 
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/pool.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 
 namespace dynasma {
@@ -12,7 +13,7 @@ namespace dynasma {
  * @brief Abstract base class for cachers - asset managers that cache and reuse
  * objects with the same seeds
  */
-template <CacheableSeedLike Seed> class AbstractCacher {
+template <CacheableSeedLike Seed> class AbstractCacher : public AbstractPool {
   public:
     using Asset = typename Seed::Asset;
 
@@ -50,13 +51,6 @@ template <CacheableSeedLike Seed> class AbstractCacher {
     LazyPtr<Asset> retrieve_asset_k(ValueT &&value) {
         return retrieve_asset(Seed{.kernel = std::forward<ValueT>(value)});
     }
-
-    /**
-     * @brief Attempts to unload not-firmly-referenced assets to free memory
-     * @param bytenum the number of bytes to attempt to free from memory
-     * @returns the number of bytes freed (according to memory_cost() functions)
-     */
-    virtual std::size_t clean(std::size_t bytenum) = 0;
 };
 } // namespace dynasma
 

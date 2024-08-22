@@ -4,11 +4,12 @@
 
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/pool.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 
 namespace dynasma {
 
-template <ReloadableSeedLike Seed> class AbstractManager {
+template <ReloadableSeedLike Seed> class AbstractManager : public AbstractPool {
   public:
     using Asset = typename Seed::Asset;
 
@@ -45,13 +46,6 @@ template <ReloadableSeedLike Seed> class AbstractManager {
     LazyPtr<Asset> register_asset_k(ValueT &&value) {
         return register_asset(Seed{.kernel = std::forward<ValueT>(value)});
     }
-
-    /**
-     * @brief Attempts to unload not-firmly-referenced assets to free memory
-     * @param bytenum the number of bytes to attempt to free from memory
-     * @returns the number of bytes freed (according to memory_cost() functions)
-     */
-    virtual std::size_t clean(std::size_t bytenum) = 0;
 };
 } // namespace dynasma
 
