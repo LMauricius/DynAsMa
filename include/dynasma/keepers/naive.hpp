@@ -76,8 +76,10 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
     LazyPtr<ExposedAsset> new_asset(const Seed &seed) override {
         return LazyPtr<ExposedAsset>(*(new ProxyRefCtr(seed, *this)));
     }
-    void clean(std::size_t bytenum) override {
+    std::size_t clean(std::size_t bytenum) override
+    {
         // do nothing; cleans itself automatically
+        return 0;
     }
 };
 } // namespace dynasma

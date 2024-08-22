@@ -129,7 +129,8 @@ class BasicManager : public virtual AbstractManager<Seed> {
             &m_unloaded_registry, m_unloaded_registry.begin());
         return LazyPtr<ExposedAsset>(m_unloaded_registry.front());
     }
-    void clean(std::size_t bytenum) override {
+    std::size_t clean(std::size_t bytenum) override
+    {
         /*
         Unloads the oldest unloadable assets first
         */
@@ -140,6 +141,8 @@ class BasicManager : public virtual AbstractManager<Seed> {
                     .memory_cost();
             m_cached_registry.front().unload();
         }
+
+        return bFreed;
     }
 };
 

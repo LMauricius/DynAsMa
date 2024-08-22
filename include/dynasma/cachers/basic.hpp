@@ -169,7 +169,8 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
             return LazyPtr<ExposedAsset>(newCtr);
         }
     }
-    void clean(std::size_t bytenum) override {
+    std::size_t clean(std::size_t bytenum) override
+    {
         /*
         Unloads the oldest unloadable assets first
         */
@@ -180,6 +181,8 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
                           .memory_cost();
             m_cached_registry.front().unload();
         }
+
+        return bFreed;
     }
 };
 

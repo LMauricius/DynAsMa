@@ -89,8 +89,10 @@ class NaiveManager : public virtual AbstractManager<Seed> {
         m_seed_registry.front().setSelfRegistryPos(m_seed_registry.begin());
         return LazyPtr<ExposedAsset>(m_seed_registry.front());
     }
-    void clean(std::size_t bytenum) override {
+    std::size_t clean(std::size_t bytenum) override
+    {
         // do nothing; cleans itself automatically
+        return 0;
     }
 };
 } // namespace dynasma

@@ -49,8 +49,9 @@ template <ReloadableSeedLike Seed> class AbstractManager {
     /**
      * @brief Attempts to unload not-firmly-referenced assets to free memory
      * @param bytenum the number of bytes to attempt to free from memory
+     * @returns the number of bytes freed (according to memory_cost() functions)
      */
-    virtual void clean(std::size_t bytenum) = 0;
+    virtual std::size_t clean(std::size_t bytenum) = 0;
 };
 } // namespace dynasma
 
