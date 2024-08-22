@@ -137,7 +137,11 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         : m_allocator(){};
     BasicCacher(const Alloc &a) : m_allocator(a) {}
     BasicCacher(Alloc &&a) : m_allocator(std::move(a)) {}
-    ~BasicCacher() = default;
+    ~BasicCacher()
+    {
+        assert(m_unloaded_registry.size() == 0 && m_cached_registry.size() == 0 &&
+               m_used_registry.size() == 0);
+    }
 
     using AbstractCacher<Seed>::retrieve_asset;
 

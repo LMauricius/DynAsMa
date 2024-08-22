@@ -80,7 +80,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
         : m_allocator(){};
     NaiveManager(const Alloc &a) : m_allocator(a) {}
     NaiveManager(Alloc &&a) : m_allocator(std::move(a)) {}
-    ~NaiveManager() = default;
+    ~NaiveManager() { assert(m_seed_registry.size() == 0); }
 
     using AbstractManager<Seed>::register_asset;
 

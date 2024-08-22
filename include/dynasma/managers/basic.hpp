@@ -8,6 +8,7 @@
 #include "dynasma/util/helpful_concepts.hpp"
 #include "dynasma/util/ref_management.hpp"
 
+#include <cassert>
 #include <concepts>
 #include <list>
 #include <variant>
@@ -119,7 +120,11 @@ class BasicManager : public virtual AbstractManager<Seed> {
         : m_allocator(){};
     BasicManager(const Alloc &a) : m_allocator(a) {}
     BasicManager(Alloc &&a) : m_allocator(std::move(a)) {}
-    ~BasicManager() = default;
+    ~BasicManager()
+    {
+        assert(m_unloaded_registry.size() == 0 && m_cached_registry.size() == 0 &&
+               m_used_registry.size() == 0);
+    }
 
     using AbstractManager<Seed>::register_asset;
 
