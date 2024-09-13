@@ -7,6 +7,7 @@ A modern C++ **dyn**amic **as**set **ma**nagement library.
 - C++20 concepts for safe and clear code
 - Completely modular and extensible
 - Simple to setup and use, (almost) fully documented code
+- Assertion fails for misusing it (see **Warnings** section)
 
 # Features
 - Lifetime tracking
@@ -40,6 +41,27 @@ When using it in a project, always stay at a specific release.
 - Manager: Source of Asset pointers with a loading/unloading policy. Gives a unique Asset per each seed registration.
 - Cacher: Source of const Asset pointers with a loading/unloading policy. Recycles Assets per equal seeds.
 - Keeper: Source of Asset pointers with an unloading policy. Creates a new Asset immediately per each seed given.
+
+# Warnings
+Important: Destroying all asset instances instances before their manager's destruction is mandatory! The best way to do that is to manually call `clean(<max number>)` method of the manager-like instances before *their* destruction. Of course, it is neccessary to ensure all pointers to a resource were destroyed before that. In debug mode, **the library fails an assertion otherwise**.
+
+Why such a strict requirement?
+
+It would be possible to only require not having any pointers to managed resources before their managers' destruction, and cleaning cached instances automagically. However, this design was proven problematic in cases where different asset types from different managers reference one another since it's hard to keep the order of destruction that cleans everything properly.
+
+Since all managers, cachers and keepers inherit from the `AbstractPool` class,
+it's best to call clean in a loop:
+```cpp
+std::size_t totalCleaned = 0;
+do {
+    for (AbstractPool& pool : allPools) {
+        totalCleaned += pool.cleanAll();
+    }
+} while (totalCleaned > 0);
+```
+
+This approach should clean everything, unless cyclic references exist.
+In that case, fix your design.
 
 
 # Installing
