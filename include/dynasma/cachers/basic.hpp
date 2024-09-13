@@ -5,6 +5,7 @@
 #include "dynasma/cachers/abstract.hpp"
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/util/definitions.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 #include "dynasma/util/ref_management.hpp"
 
@@ -118,7 +119,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         }
     };
 
-    [[no_unique_address, msvc::no_unique_address]] Alloc m_allocator;
+    [[DYNASMA_NO_UNIQUE_ADDRESS]] Alloc m_allocator;
 
     // 3 seed registries
     std::list<ProxyRefCtr> m_unloaded_registry;

@@ -5,6 +5,7 @@
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/util/definitions.hpp"
 #include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
 #include "dynasma/util/ref_management.hpp"
@@ -66,7 +67,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
         }
     };
 
-    [[no_unique_address, msvc::no_unique_address]] Alloc m_allocator;
+    [[DYNASMA_NO_UNIQUE_ADDRESS]] Alloc m_allocator;
     std::list<ProxyRefCtr> m_seed_registry;
 
   public:
