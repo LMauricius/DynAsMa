@@ -3,6 +3,7 @@
 #define INCLUDED_DYNASMA_POOL_H
 
 #include <cstddef>
+#include <limits>
 
 namespace dynasma {
 
@@ -19,6 +20,14 @@ class AbstractPool {
      * @returns the number of bytes freed (according to memory_cost() functions)
      */
     virtual std::size_t clean(std::size_t bytenum) = 0;
+
+    /**
+     * @brief Attempts to unload all not-firmly-referenced assets to free memory
+     * @returns the number of bytes freed (according to memory_cost() functions)
+     */
+    inline std::size_t cleanAll() {
+        return clean(std::numeric_limits<std::size_t>::max());
+    }
 };
 } // namespace dynasma
 
