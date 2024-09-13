@@ -41,6 +41,7 @@ When using it in a project, always stay at a specific release.
 - Manager: Source of Asset pointers with a loading/unloading policy. Gives a unique Asset per each seed registration.
 - Cacher: Source of const Asset pointers with a loading/unloading policy. Recycles Assets per equal seeds.
 - Keeper: Source of Asset pointers with an unloading policy. Creates a new Asset immediately per each seed given.
+- Standalone pointer: Pointer to an immediately constructed object independant from any managers.
 
 # Warnings
 Important: Destroying all asset instances instances before their manager's destruction is mandatory! The best way to do that is to manually call `clean(<max number>)` method of the manager-like instances before *their* destruction. Of course, it is neccessary to ensure all pointers to a resource were destroyed before that. In debug mode, **the library fails an assertion otherwise**.
