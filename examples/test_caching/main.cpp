@@ -34,43 +34,47 @@ struct TestSeed {
 int main() {
     dynasma::BasicCacher<TestSeed, std::allocator<TestAsset>> cacher;
 
-    TestSeed seed1{"<My asset 1>"}, seed2{"<My asset 2>"};
-
-    dynasma::LazyPtr<TestAsset> lazyPtr_a, lazyPtr_b;
-
     {
-        auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
-        auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
-        auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
+        TestSeed seed1{"<My asset 1>"}, seed2{"<My asset 2>"};
 
-        std::cout << "firmPtr1 === firmPtr2: "
-                  << (&*firmPtr1 == &*firmPtr2) << std::endl;
+        dynasma::LazyPtr<TestAsset> lazyPtr_a, lazyPtr_b;
 
-        std::cout << "firmPtr1 === firmPtr3: "
-                  << (&*firmPtr1 == &*firmPtr3) << std::endl;
+        {
+            auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
+            auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
+            auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
 
-        lazyPtr_a = firmPtr1;
+            std::cout << "firmPtr1 === firmPtr2: " << (&*firmPtr1 == &*firmPtr2)
+                      << std::endl;
+
+            std::cout << "firmPtr1 === firmPtr3: " << (&*firmPtr1 == &*firmPtr3)
+                      << std::endl;
+
+            lazyPtr_a = firmPtr1;
+        }
+
+        {
+            auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
+            auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
+            auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
+
+            std::cout << "firmPtr1 === firmPtr2: " << (&*firmPtr1 == &*firmPtr2)
+                      << std::endl;
+
+            std::cout << "firmPtr1 === firmPtr3: " << (&*firmPtr1 == &*firmPtr3)
+                      << std::endl;
+
+            lazyPtr_b = firmPtr1;
+        }
+
+        auto firmPtr_a = lazyPtr_a.getLoaded();
+        auto firmPtr_b = lazyPtr_b.getLoaded();
+
+        std::cout << "firmPtr_a === firmPtr_b: " << (&*firmPtr_a == &*firmPtr_b)
+                  << std::endl;
     }
 
-    {
-        auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
-        auto firmPtr2 = cacher.retrieve_asset(seed2).getLoaded();
-        auto firmPtr3 = cacher.retrieve_asset(seed1).getLoaded();
-
-        std::cout << "firmPtr1 === firmPtr2: "
-                  << (&*firmPtr1 == &*firmPtr2) << std::endl;
-
-        std::cout << "firmPtr1 === firmPtr3: "
-                  << (&*firmPtr1 == &*firmPtr3) << std::endl;
-
-        lazyPtr_b = firmPtr1;
-    }
-
-    auto firmPtr_a = lazyPtr_a.getLoaded();
-    auto firmPtr_b = lazyPtr_b.getLoaded();
-
-    std::cout << "firmPtr_a === firmPtr_b: "
-              << (&*firmPtr_a == &*firmPtr_b) << std::endl;
+    cacher.clean(1000000);
 
     return 0;
 }
