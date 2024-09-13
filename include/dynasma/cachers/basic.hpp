@@ -9,6 +9,7 @@
 #include "dynasma/util/helpful_concepts.hpp"
 #include "dynasma/util/ref_management.hpp"
 
+#include <cassert>
 #include <concepts>
 #include <list>
 #include <map>
