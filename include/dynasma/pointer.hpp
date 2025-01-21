@@ -195,39 +195,15 @@ template <class T> class LazyPtr
     template <class O> bool operator==(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    template <class O> auto operator<=>(const LazyPtr<O> &other) const {
+        return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
     template <class O> bool operator==(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    template <class O> auto operator<=>(const FirmPtr<O> &other) const {
+        return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 };
 
@@ -459,39 +435,15 @@ template <class T> class FirmPtr
     template <class O> bool operator==(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>=(const FirmPtr<O> &other) const {
-        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    template <class O> auto operator<=>(const FirmPtr<O> &other) const {
+        return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
     template <class O> bool operator==(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> bool operator!=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr != (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr < (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator<=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr <= (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr > (void *)other.m_p_ctr;
-    }
-    template <class O> bool operator>=(const LazyPtr<O> &other) const {
-        return (void *)this->m_p_ctr >= (void *)other.m_p_ctr;
+    template <class O> auto operator<=>(const LazyPtr<O> &other) const {
+        return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
     // Dereferencing
