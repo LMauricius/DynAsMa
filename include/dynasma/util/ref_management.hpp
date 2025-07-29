@@ -43,9 +43,11 @@ template <class T> class ReferenceCounter {
      */
     T &hold() {
         if (is_unloadable()) {
+            m_firmcount++;
             handle_usable_impl();
+        } else {
+            m_firmcount++;
         }
-        m_firmcount++;
         return *p_obj;
     }
     /**
