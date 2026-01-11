@@ -220,7 +220,7 @@ template <class T> class FirmPtr
 
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
-    template <class O> friend class SharedPtr;
+    template <class O> friend class IndirectPtr;
 
     RefCtr *m_p_ctr;
     T *m_p_object;
