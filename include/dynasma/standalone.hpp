@@ -1,4 +1,5 @@
 #pragma once
+#include "dynasma/core_concepts.hpp"
 #ifndef INCLUDED_DYNASMA_STANDALONE_H
 #define INCLUDED_DYNASMA_STANDALONE_H
 
@@ -20,9 +21,18 @@ class StandaloneRefCtr : public TypeErasedReferenceCounter<T> {
   public:
     template <class... Params>
     StandaloneRefCtr(Params... params)
+        requires(!RawConvertibleToPtr<T>)
         : m_obj(std::forward<Params>(params)...) {
         this->p_obj = &(this->m_obj);
     }
+
+    template <class... Params>
+    StandaloneRefCtr(Params... params)
+        requires RawConvertibleToPtr<T>
+        : m_obj(this, std::forward<Params>(params)...) {
+        this->p_obj = &(this->m_obj);
+    }
+
     ~StandaloneRefCtr() {}
 };
 

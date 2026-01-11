@@ -6,7 +6,6 @@
 #include "dynasma/util/helpful_concepts.hpp"
 
 #include <concepts>
-#include <functional>
 #include <variant>
 
 namespace dynasma {
@@ -17,6 +16,13 @@ namespace dynasma {
  */
 template <typename T>
 concept StandardPolymorphic = std::is_base_of<PolymorphicBase, T>::value;
+
+/**
+ * Any type derived from PtrAwareBase.
+ * Raw pointers to such types can be cast to FirmPtr and LazyPtr
+ */
+template <typename T>
+concept RawConvertibleToPtr = std::is_base_of<PtrAwareBase, T>::value;
 
 /**
  * An asset, constructible by an asset manager, from a seed kernel.
@@ -109,8 +115,7 @@ concept Sortable = requires(T a, T b) {
 template <class T>
 concept CacheableSeedLike = ReloadableSeedLike<T> && Sortable<T>;
 
-namespace internal
-{
+namespace internal {
 
 template <class T, class... Args> struct ConstructibleFromVariantOptions_type;
 template <class T, class... Args>

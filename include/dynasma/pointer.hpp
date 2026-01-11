@@ -29,6 +29,10 @@ concept PointerDynamicCastNeeded =
     std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
     MoreOrEquallyCVQualified<To, From>;
 
+template <class To, class From>
+concept RawPointerCastable =
+    PointerCastable<To, From> && RawConvertibleToPtr<From>;
+
 template <class T>
 using TypeErasedReferenceCounter = ReferenceCounter<PolymorphicBase>;
 
@@ -57,6 +61,12 @@ template <class T> class LazyPtr
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
     LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.lazy_hold(); }
+
+    // Constructor for casting raw pointers to ConvertibleToPtr objects
+    template <class O>
+    LazyPtr(O *p_object)
+        requires RawPointerCastable<T, O>
+        : m_p_ctr(p_object->m_p_ctr) {}
 
     // Copy & Move constructors for LazyPtr
 
@@ -245,6 +255,12 @@ template <class T> class FirmPtr
               // can be dereferenced -> is not nullptr
               // this could be used to optimize for non-virtual inheritances
               &*dynamic_cast<T *>(&ctr.hold())) {}
+
+    // Constructor for casting raw pointers to ConvertibleToPtr objects
+    template <class O>
+    FirmPtr(O *p_object)
+        requires RawPointerCastable<T, O>
+        : m_p_ctr(p_object->m_p_ctr) {}
 
     // Copy & move constructors for FirmPtr
 

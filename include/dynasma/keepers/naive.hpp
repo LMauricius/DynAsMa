@@ -5,6 +5,7 @@
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/keepers/abstract.hpp"
 #include "dynasma/pointer.hpp"
+#include "dynasma/util/construction.hpp"
 #include "dynasma/util/definitions.hpp"
 #include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/helpful_concepts.hpp"
@@ -46,15 +47,15 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
             ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
             this->p_obj = p_asset;
             std::visit(
-                [p_asset](const auto &arg) {
-                    new (p_asset) ConstructedAsset(arg);
+                [p_asset, this](const auto &arg) {
+                    constructObject(p_asset, *this, arg);
                 },
                 seed.kernel);
         }
         ~ProxyRefCtr() {
             ConstructedAsset &asset_casted =
                 *dynamic_cast<ConstructedAsset *>(this->p_obj);
-            this->p_obj->~PolymorphicBase();
+            destroyObject(this->p_obj);
             m_manager.m_allocator.deallocate(&asset_casted, 1);
         }
     };
