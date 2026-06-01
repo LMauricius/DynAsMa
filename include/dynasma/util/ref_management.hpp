@@ -2,8 +2,7 @@
 #ifndef INCLUDED_DYNASMA_REF_MAN_H
 #define INCLUDED_DYNASMA_REF_MAN_H
 
-#include "dynasma/core_concepts.hpp"
-#include "dynasma/util/type_modification.hpp"
+#include <cstdint>
 
 namespace dynasma {
 template <class T> class ReferenceCounter {
@@ -153,6 +152,11 @@ template <class T> class ReferenceCounter {
         }
     }
 };
+
+class PolymorphicBase;
+
+using PolymorphicReferenceCounter = ReferenceCounter<PolymorphicBase>;
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_REF_MAN_H

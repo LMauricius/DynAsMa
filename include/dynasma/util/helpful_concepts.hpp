@@ -2,6 +2,8 @@
 #ifndef INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H
 #define INCLUDED_DYNASMA_HELPFUL_CONCEPTS_H
 
+#include "dynasma/util/ref_management.hpp"
+
 #include <concepts>
 #include <functional>
 
@@ -128,6 +130,8 @@ concept DerivedAllocatorWLocality =
 template <class T, class Arg>
 concept ConstructibleFrom = requires(Arg a) {
     { new T(a) };
+} || requires(Arg a, PolymorphicReferenceCounter ctr) {
+    { new T(&ctr, a) };
 };
 
 } // namespace dynasma

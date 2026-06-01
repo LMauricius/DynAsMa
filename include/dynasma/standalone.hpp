@@ -10,7 +10,7 @@ namespace dynasma {
 namespace internal {
 
 template <StandardPolymorphic T>
-class StandaloneRefCtr : public TypeErasedReferenceCounter<T> {
+class StandaloneRefCtr : public PolymorphicReferenceCounter {
   protected:
     void handle_usable_impl() override {}
     void handle_unloadable_impl() override {}

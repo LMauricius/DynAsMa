@@ -34,7 +34,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
   private:
     // reference counting response implementation
-    class ProxyRefCtr : public TypeErasedReferenceCounter<ExposedAsset> {
+    class ProxyRefCtr : public PolymorphicReferenceCounter {
         BasicCacher &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;
         std::map<Seed, ProxyRefCtr *const>::iterator m_map_it;

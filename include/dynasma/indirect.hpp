@@ -19,7 +19,7 @@ template <class T> class IndirectPtr {
     friend std::hash<IndirectPtr>;
 
     // type-erased reference counter.
-    using RefCtr = TypeErasedReferenceCounter<T>;
+    using RefCtr = PolymorphicReferenceCounter;
 
     RefCtr *m_p_ctr;
     T *m_p_object;

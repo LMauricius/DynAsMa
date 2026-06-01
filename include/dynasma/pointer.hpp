@@ -33,9 +33,6 @@ template <class To, class From>
 concept RawPointerCastable =
     PointerCastable<To, From> && RawConvertibleToPtr<From>;
 
-template <class T>
-using TypeErasedReferenceCounter = ReferenceCounter<PolymorphicBase>;
-
 template <class T> class FirmPtr;
 
 /**
@@ -47,7 +44,7 @@ template <class T> class LazyPtr
     friend std::hash<LazyPtr>;
 
     // type-erased reference counter.
-    using RefCtr = TypeErasedReferenceCounter<T>;
+    using RefCtr = PolymorphicReferenceCounter;
 
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
@@ -66,7 +63,7 @@ template <class T> class LazyPtr
     template <class O>
     LazyPtr(O *p_object)
         requires RawPointerCastable<T, O>
-        : m_p_ctr(p_object->m_p_ctr) {}
+        : m_p_ctr(p_object->m_p_counter) {}
 
     // Copy & Move constructors for LazyPtr
 
@@ -226,7 +223,7 @@ template <class T> class FirmPtr
     friend std::hash<FirmPtr>;
 
     // type-erased reference counter.
-    using RefCtr = TypeErasedReferenceCounter<T>;
+    using RefCtr = PolymorphicReferenceCounter;
 
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
@@ -260,7 +257,7 @@ template <class T> class FirmPtr
     template <class O>
     FirmPtr(O *p_object)
         requires RawPointerCastable<T, O>
-        : m_p_ctr(p_object->m_p_ctr) {}
+        : m_p_ctr(p_object->m_p_counter), m_p_object(p_object) {}
 
     // Copy & move constructors for FirmPtr
 

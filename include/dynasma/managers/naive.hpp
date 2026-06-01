@@ -35,7 +35,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
 
   private:
     // reference counting response implementation
-    class ProxyRefCtr : public TypeErasedReferenceCounter<ExposedAsset> {
+    class ProxyRefCtr : public PolymorphicReferenceCounter {
         Seed m_seed;
         NaiveManager &m_manager;
         std::list<ProxyRefCtr>::iterator m_it;

@@ -33,7 +33,7 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
 
   private:
     // reference counting response implementation
-    class ProxyRefCtr : public TypeErasedReferenceCounter<ExposedAsset> {
+    class ProxyRefCtr : public PolymorphicReferenceCounter {
         NaiveKeeper &m_manager;
 
       protected:
