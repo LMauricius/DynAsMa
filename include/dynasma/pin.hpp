@@ -15,8 +15,8 @@ namespace dynasma {
  * @note Can be used to point to members of or data owned by an object
  * controlled through a FirmPtr
  */
-template <class T> class IndirectPtr {
-    friend std::hash<IndirectPtr>;
+template <class T> class PinPtr {
+    friend std::hash<PinPtr>;
 
     // type-erased reference counter.
     using RefCtr = PolymorphicReferenceCounter;
@@ -26,19 +26,18 @@ template <class T> class IndirectPtr {
 
     // Internal constructor for when we know both the counter and the object
     // The object must be owned by the ctr, otherwise causes U.B.
-    IndirectPtr(RefCtr &ctr, T *p_object)
-        : m_p_ctr(&ctr), m_p_object(p_object) {
+    PinPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {
         // still need to reference count
         m_p_ctr->hold();
     }
 
   public:
     // Default constructor
-    IndirectPtr() : m_p_ctr(nullptr) {}
+    PinPtr() : m_p_ctr(nullptr) {}
 
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
-    IndirectPtr(RefCtr &ctr)
+    PinPtr(RefCtr &ctr)
         : m_p_ctr(&ctr),
           m_p_object(
               // assume the casting is possible, i.e. we have a valid pointer
@@ -46,44 +45,44 @@ template <class T> class IndirectPtr {
               // this could be used to optimize for non-virtual inheritances
               &*dynamic_cast<T *>(&ctr.hold())) {}
 
-    // Copy & move constructors for IndirectPtr
+    // Copy & move constructors for PinPtr
 
-    // const IndirectPtr<O> &
-    IndirectPtr(const IndirectPtr<T> &other)
+    // const PinPtr<O> &
+    PinPtr(const PinPtr<T> &other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr->hold();
     }
 
     template <class O>
-    IndirectPtr(const IndirectPtr<O> &other)
+    PinPtr(const PinPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr->hold();
     }
 
     template <class O>
-    IndirectPtr(const IndirectPtr<O> &other)
+    PinPtr(const PinPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(&*dynamic_cast<T *>(other.m_p_object)) {
         other.m_p_ctr->hold();
     }
 
-    // IndirectPtr<O> &&
-    IndirectPtr(IndirectPtr<T> &&other)
+    // PinPtr<O> &&
+    PinPtr(PinPtr<T> &&other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O>
-    IndirectPtr(IndirectPtr<O> &&other)
+    PinPtr(PinPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O>
-    IndirectPtr(IndirectPtr<O> &&other)
+    PinPtr(PinPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(dynamic_cast<T *>(other.m_p_object)) {
@@ -92,43 +91,43 @@ template <class T> class IndirectPtr {
 
     // Copy & move constructors for subobjects
 
-    // const IndirectPtr<O> &
+    // const PinPtr<O> &
     template <class M>
-    IndirectPtr(const IndirectPtr<M> &other, T *p_subobject)
+    PinPtr(const PinPtr<M> &other, T *p_subobject)
         : m_p_ctr(other.m_p_ctr), m_p_object(p_subobject) {
         other.m_p_ctr->hold();
     }
 
     template <class O, class M>
-    IndirectPtr(const IndirectPtr<M> &other, O *p_subobject)
+    PinPtr(const PinPtr<M> &other, O *p_subobject)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(p_subobject) {
         other.m_p_ctr->hold();
     }
 
     template <class O, class M>
-    IndirectPtr(const IndirectPtr<M> &other, O *p_subobject)
+    PinPtr(const PinPtr<M> &other, O *p_subobject)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(&*dynamic_cast<T *>(p_subobject)) {
         other.m_p_ctr->hold();
     }
 
-    // IndirectPtr<O> &&
+    // PinPtr<O> &&
     template <class M>
-    IndirectPtr(IndirectPtr<M> &&other, T *p_subobject)
+    PinPtr(PinPtr<M> &&other, T *p_subobject)
         : m_p_ctr(other.m_p_ctr), m_p_object(p_subobject) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O, class M>
-    IndirectPtr(IndirectPtr<M> &&other, O *p_subobject)
+    PinPtr(PinPtr<M> &&other, O *p_subobject)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(p_subobject) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O, class M>
-    IndirectPtr(IndirectPtr<M> &&other, O *p_subobject)
+    PinPtr(PinPtr<M> &&other, O *p_subobject)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(p_subobject)) {
         other.m_p_ctr = nullptr;
@@ -137,20 +136,20 @@ template <class T> class IndirectPtr {
     // Copy & move constructor for FirmPtr
 
     // const FirmPtr<O> &
-    IndirectPtr(const FirmPtr<T> &other)
+    PinPtr(const FirmPtr<T> &other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr->hold();
     }
 
     template <class O>
-    IndirectPtr(const FirmPtr<O> &other)
+    PinPtr(const FirmPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr->hold();
     }
 
     template <class O>
-    IndirectPtr(const FirmPtr<O> &other)
+    PinPtr(const FirmPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(&*dynamic_cast<T *>(other.m_p_object)) {
@@ -158,20 +157,20 @@ template <class T> class IndirectPtr {
     }
 
     // FirmPtr<O> &&
-    IndirectPtr(FirmPtr<T> &&other)
+    PinPtr(FirmPtr<T> &&other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O>
-    IndirectPtr(FirmPtr<O> &&other)
+    PinPtr(FirmPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.m_p_ctr = nullptr;
     }
 
     template <class O>
-    IndirectPtr(FirmPtr<O> &&other)
+    PinPtr(FirmPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(dynamic_cast<T *>(other.m_p_object)) {
@@ -180,15 +179,15 @@ template <class T> class IndirectPtr {
 
     // Destructor
 
-    ~IndirectPtr() {
+    ~PinPtr() {
         if (m_p_ctr)
             m_p_ctr->release();
     }
 
-    // copy & move assignment for IndirectPtr
+    // copy & move assignment for PinPtr
 
-    // const IndirectPtr<O> &
-    IndirectPtr &operator=(const IndirectPtr<T> &other) {
+    // const PinPtr<O> &
+    PinPtr &operator=(const PinPtr<T> &other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
@@ -203,7 +202,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(const IndirectPtr<O> &other)
+    PinPtr &operator=(const PinPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -220,7 +219,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(const IndirectPtr<O> &other)
+    PinPtr &operator=(const PinPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -236,8 +235,8 @@ template <class T> class IndirectPtr {
         return *this;
     }
 
-    // IndirectPtr<O> &&
-    IndirectPtr &operator=(IndirectPtr<T> &&other) {
+    // PinPtr<O> &&
+    PinPtr &operator=(PinPtr<T> &&other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
@@ -250,7 +249,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(IndirectPtr<O> &&other)
+    PinPtr &operator=(PinPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -265,7 +264,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(IndirectPtr<O> &&other)
+    PinPtr &operator=(PinPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -282,7 +281,7 @@ template <class T> class IndirectPtr {
     // copy & move assignment for FirmPtr
 
     // const FirmPtr<O> &
-    IndirectPtr &operator=(const FirmPtr<T> &other) {
+    PinPtr &operator=(const FirmPtr<T> &other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
@@ -297,7 +296,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(const FirmPtr<O> &other)
+    PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -314,7 +313,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(const FirmPtr<O> &other)
+    PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -331,7 +330,7 @@ template <class T> class IndirectPtr {
     }
 
     // FirmPtr<O> &&
-    IndirectPtr &operator=(FirmPtr<T> &&other) {
+    PinPtr &operator=(FirmPtr<T> &&other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
@@ -344,7 +343,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(FirmPtr<O> &&other)
+    PinPtr &operator=(FirmPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -359,7 +358,7 @@ template <class T> class IndirectPtr {
     }
 
     template <class O>
-    IndirectPtr &operator=(FirmPtr<O> &&other)
+    PinPtr &operator=(FirmPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
     {
         if (m_p_ctr)
@@ -376,7 +375,7 @@ template <class T> class IndirectPtr {
     // Copy & move assignment for LazyPtr
 
     // LazyPtr&<T> &
-    IndirectPtr &operator=(const LazyPtr<T> &other) {
+    PinPtr &operator=(const LazyPtr<T> &other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
@@ -390,7 +389,7 @@ template <class T> class IndirectPtr {
 
     // LazyPtr&<O> &
     template <class O>
-    IndirectPtr &operator=(const LazyPtr<O> &other)
+    PinPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
         if (m_p_ctr)
@@ -406,10 +405,10 @@ template <class T> class IndirectPtr {
 
     // Comparison operators
 
-    template <class O> bool operator==(const IndirectPtr<O> &other) const {
+    template <class O> bool operator==(const PinPtr<O> &other) const {
         return (void *)this->m_p_object == (void *)other.m_p_object;
     }
-    template <class O> auto operator<=>(const IndirectPtr<O> &other) const {
+    template <class O> auto operator<=>(const PinPtr<O> &other) const {
         return (void *)this->m_p_object <=> (void *)other.m_p_object;
     }
 
@@ -421,68 +420,63 @@ template <class T> class IndirectPtr {
     // Pointer casting functions
 
     template <class To, class Fr>
-    friend IndirectPtr<To> static_pointer_cast(const IndirectPtr<Fr> &);
+    friend PinPtr<To> static_pointer_cast(const PinPtr<Fr> &);
     template <class To, class Fr>
-    friend IndirectPtr<To> static_pointer_cast(IndirectPtr<Fr> &&);
+    friend PinPtr<To> static_pointer_cast(PinPtr<Fr> &&);
     template <class To, class Fr>
-    friend IndirectPtr<To> dynamic_pointer_cast(const IndirectPtr<Fr> &);
+    friend PinPtr<To> dynamic_pointer_cast(const PinPtr<Fr> &);
     template <class To, class Fr>
-    friend IndirectPtr<To> dynamic_pointer_cast(IndirectPtr<Fr> &&);
+    friend PinPtr<To> dynamic_pointer_cast(PinPtr<Fr> &&);
     template <class To, class Fr>
-    friend IndirectPtr<To> const_pointer_cast(const IndirectPtr<Fr> &);
+    friend PinPtr<To> const_pointer_cast(const PinPtr<Fr> &);
     template <class To, class Fr>
-    friend IndirectPtr<To> const_pointer_cast(IndirectPtr<Fr> &&);
+    friend PinPtr<To> const_pointer_cast(PinPtr<Fr> &&);
     template <class To, class Fr>
-    friend IndirectPtr<To> reinterpret_pointer_cast(const IndirectPtr<Fr> &);
+    friend PinPtr<To> reinterpret_pointer_cast(const PinPtr<Fr> &);
     template <class To, class Fr>
-    friend IndirectPtr<To> reinterpret_pointer_cast(IndirectPtr<Fr> &&);
+    friend PinPtr<To> reinterpret_pointer_cast(PinPtr<Fr> &&);
 };
 
 template <class To, class From>
-IndirectPtr<To> static_pointer_cast(const IndirectPtr<From> &from) {
-    return IndirectPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+PinPtr<To> static_pointer_cast(const PinPtr<From> &from) {
+    return PinPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
-IndirectPtr<To> static_pointer_cast(IndirectPtr<From> &&from) {
-    auto ret =
-        IndirectPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
+PinPtr<To> static_pointer_cast(PinPtr<From> &&from) {
+    auto ret = PinPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
     from.m_p_ctr = nullptr;
     return ret;
 }
 template <class To, class From>
-IndirectPtr<To> dynamic_pointer_cast(const IndirectPtr<From> &from) {
+PinPtr<To> dynamic_pointer_cast(const PinPtr<From> &from) {
     // we cast the reference, not a pointer, so it throws on errors
-    return IndirectPtr<To>(*from.m_p_ctr,
-                           &dynamic_cast<To &>(*from.m_p_object));
+    return PinPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
 }
 template <class To, class From>
-IndirectPtr<To> dynamic_pointer_cast(IndirectPtr<From> &&from) {
+PinPtr<To> dynamic_pointer_cast(PinPtr<From> &&from) {
     // we cast the reference, not a pointer, so it throws on errors
-    auto ret =
-        IndirectPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
+    auto ret = PinPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
     from.m_p_ctr = nullptr;
     return ret;
 }
 template <class To, class From>
-IndirectPtr<To> const_pointer_cast(const IndirectPtr<From> &from) {
-    return IndirectPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+PinPtr<To> const_pointer_cast(const PinPtr<From> &from) {
+    return PinPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
-IndirectPtr<To> const_pointer_cast(IndirectPtr<From> &&from) {
-    auto ret =
-        IndirectPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
+PinPtr<To> const_pointer_cast(PinPtr<From> &&from) {
+    auto ret = PinPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
     from.m_p_ctr = nullptr;
     return ret;
 }
 template <class To, class From>
-IndirectPtr<To> reinterpret_pointer_cast(const IndirectPtr<From> &from) {
-    return IndirectPtr<To>(*from.m_p_ctr,
-                           reinterpret_cast<To *>(from.m_p_object));
+PinPtr<To> reinterpret_pointer_cast(const PinPtr<From> &from) {
+    return PinPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
-IndirectPtr<To> reinterpret_pointer_cast(IndirectPtr<From> &&from) {
+PinPtr<To> reinterpret_pointer_cast(PinPtr<From> &&from) {
     auto ret =
-        IndirectPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
+        PinPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
     from.m_p_ctr = nullptr;
     return ret;
 }
@@ -490,8 +484,8 @@ IndirectPtr<To> reinterpret_pointer_cast(IndirectPtr<From> &&from) {
 } // namespace dynasma
 
 namespace std {
-template <class T> struct hash<dynasma::IndirectPtr<T>> {
-    size_t operator()(const dynasma::IndirectPtr<T> &x) const {
+template <class T> struct hash<dynasma::PinPtr<T>> {
+    size_t operator()(const dynasma::PinPtr<T> &x) const {
         return (size_t)x.m_p_ctr;
     }
 };
