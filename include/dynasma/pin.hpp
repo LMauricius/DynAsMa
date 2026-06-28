@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #ifndef INCLUDED_DYNASMA_SHARED_POINTER_H
 #define INCLUDED_DYNASMA_SHARED_POINTER_H
 
@@ -179,6 +180,9 @@ template <class T> class PinPtr {
           m_p_object(dynamic_cast<T *>(other.m_p_object)) {
         other.m_p_ctr = nullptr;
     }
+
+    // Nullify
+    PinPtr(std::nullptr_t) : m_p_ctr(nullptr) {}
 
     // Destructor
 
@@ -375,44 +379,29 @@ template <class T> class PinPtr {
         return *this;
     }
 
-    // Copy & move assignment for LazyPtr
-
-    // LazyPtr&<T> &
-    PinPtr &operator=(const LazyPtr<T> &other) {
+    // Nullify
+    PinPtr &operator=(std::nullptr_t other) {
         if (m_p_ctr)
             m_p_ctr->release();
 
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_object = &*dynamic_cast<T *>(&m_p_ctr->hold());
-
-        return *this;
-    }
-
-    // LazyPtr&<O> &
-    template <class O>
-    PinPtr &operator=(const LazyPtr<O> &other)
-        requires PointerCastable<T, O>
-    {
-        if (m_p_ctr)
-            m_p_ctr->release();
-
-        m_p_ctr = other.m_p_ctr;
-
-        if (m_p_ctr)
-            m_p_object = &*dynamic_cast<T *>(&m_p_ctr->hold());
+        m_p_ctr = nullptr;
 
         return *this;
     }
 
     // Comparison operators
 
+    operator bool() const { return this->m_p_object; }
+
     template <class O> bool operator==(const PinPtr<O> &other) const {
         return (void *)this->m_p_object == (void *)other.m_p_object;
     }
     template <class O> auto operator<=>(const PinPtr<O> &other) const {
         return (void *)this->m_p_object <=> (void *)other.m_p_object;
+    }
+
+    template <class O> bool operator==(std::nullptr_t other) const {
+        return (void *)this->m_p_object == other;
     }
 
     // Dereferencing

@@ -105,6 +105,9 @@ template <class T> class LazyPtr
             m_p_ctr->lazy_release();
     }
 
+    // Nullify
+    LazyPtr(std::nullptr_t) : m_p_ctr(nullptr) {}
+
     // Copy & Move assignment for LazyPtr
 
     // LazyPtr<T> &
@@ -186,6 +189,16 @@ template <class T> class LazyPtr
         return *this;
     }
 
+    // Nullify
+    LazyPtr &operator=(std::nullptr_t other) {
+        if (m_p_ctr)
+            m_p_ctr->lazy_release();
+
+        m_p_ctr = nullptr;
+
+        return *this;
+    }
+
     /**
      * @brief Ensures the object is loaded before storing it into a FirmPtr
      * @returns a FirmPtr to the object
@@ -199,6 +212,8 @@ template <class T> class LazyPtr
 
     // Comparison operators
 
+    operator bool() const { return this->m_p_ctr; }
+
     template <class O> bool operator==(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
@@ -211,6 +226,10 @@ template <class T> class LazyPtr
     }
     template <class O> auto operator<=>(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
+    }
+
+    template <class O> bool operator==(std::nullptr_t other) const {
+        return (void *)this->m_p_ctr == other;
     }
 };
 
@@ -318,6 +337,9 @@ template <class T> class FirmPtr
         if (m_p_ctr)
             m_p_ctr->release();
     }
+
+    // Nullify
+    FirmPtr(std::nullptr_t) : m_p_ctr(nullptr) {}
 
     // copy & move assignment for FirmPtr
 
@@ -444,7 +466,19 @@ template <class T> class FirmPtr
         return *this;
     }
 
+    // Nullify
+    FirmPtr &operator=(std::nullptr_t other) {
+        if (m_p_ctr)
+            m_p_ctr->release();
+
+        m_p_ctr = nullptr;
+
+        return *this;
+    }
+
     // Comparison operators
+
+    operator bool() const { return this->m_p_object; }
 
     template <class O> bool operator==(const FirmPtr<O> &other) const {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
@@ -458,6 +492,10 @@ template <class T> class FirmPtr
     }
     template <class O> auto operator<=>(const LazyPtr<O> &other) const {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
+    }
+
+    template <class O> bool operator==(std::nullptr_t other) const {
+        return (void *)this->m_p_object == other;
     }
 
     // Dereferencing
