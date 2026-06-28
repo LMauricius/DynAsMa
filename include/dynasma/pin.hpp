@@ -18,6 +18,9 @@ namespace dynasma {
 template <class T> class PinPtr {
     friend std::hash<PinPtr>;
 
+    template <class O> friend class FirmPtr;
+    template <class O> friend class PinPtr;
+
     // type-erased reference counter.
     using RefCtr = PolymorphicReferenceCounter;
 
