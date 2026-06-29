@@ -2,6 +2,7 @@
 #include "dynasma/core_concepts.hpp"
 
 #include <iostream>
+#include <optional>
 
 class TestAsset : public dynasma::PolymorphicBase {
     std::string m_name;
@@ -37,7 +38,7 @@ int main() {
     {
         TestSeed seed1{"<My asset 1>"}, seed2{"<My asset 2>"};
 
-        dynasma::LazyPtr<TestAsset> lazyPtr_a, lazyPtr_b;
+        std::optional<dynasma::LazyPtr<TestAsset>> lazyPtr_a, lazyPtr_b;
 
         {
             auto firmPtr1 = cacher.retrieve_asset(seed1).getLoaded();
@@ -67,8 +68,8 @@ int main() {
             lazyPtr_b = firmPtr1;
         }
 
-        auto firmPtr_a = lazyPtr_a.getLoaded();
-        auto firmPtr_b = lazyPtr_b.getLoaded();
+        auto firmPtr_a = lazyPtr_a.value().getLoaded();
+        auto firmPtr_b = lazyPtr_b.value().getLoaded();
 
         std::cout << "firmPtr_a === firmPtr_b: " << (&*firmPtr_a == &*firmPtr_b)
                   << std::endl;

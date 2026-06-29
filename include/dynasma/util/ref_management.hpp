@@ -157,6 +157,28 @@ class PolymorphicBase;
 
 using PolymorphicReferenceCounter = ReferenceCounter<PolymorphicBase>;
 
+namespace internal {
+
+class NullRefCtr : public PolymorphicReferenceCounter {
+  protected:
+    void handle_usable_impl() override {}
+    void handle_unloadable_impl() override {}
+    void handle_forgettable_impl() override {}
+
+  public:
+    NullRefCtr() {
+        this->p_obj = nullptr;
+        // Always hold the global instance
+        this->hold();
+    }
+
+    ~NullRefCtr() {}
+};
+
+inline NullRefCtr NULL_REF_CTR{};
+
+} // namespace internal
+
 } // namespace dynasma
 
 #endif // INCLUDED_DYNASMA_REF_MAN_H

@@ -3,6 +3,7 @@
 #include "dynasma/managers/naive.hpp"
 
 #include <iostream>
+#include <optional>
 
 class TestAsset : public dynasma::PolymorphicBase {
   public:
@@ -26,8 +27,8 @@ struct TestSeed {
 template <template <typename, typename> typename Manager> void testManager() {
     Manager<TestSeed, std::allocator<TestAsset>> manager;
 
-    dynasma::LazyPtr<TestAsset> lazyPtr1;
-    dynasma::LazyPtr<TestAsset> lazyPtr2;
+    std::optional<dynasma::LazyPtr<TestAsset>> lazyPtr1;
+    std::optional<dynasma::LazyPtr<TestAsset>> lazyPtr2;
 
     std::cout << "Entering block...\n";
     {
@@ -38,7 +39,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking firm reference...\n";
-        auto firmPtr = lazyPtr1.getLoaded();
+        auto firmPtr = lazyPtr1.value().getLoaded();
         std::cout << "    Firm reference taken!\n";
 
         std::cout << "    Asset pointer: " << &*firmPtr << "\n";
@@ -56,7 +57,7 @@ template <template <typename, typename> typename Manager> void testManager() {
         std::cout << "    Asset registered!\n";
 
         std::cout << "    Taking firm reference...\n";
-        auto firmPtr = lazyPtr2.getLoaded();
+        auto firmPtr = lazyPtr2.value().getLoaded();
         std::cout << "    Firm reference taken!\n";
 
         std::cout << "    Asset pointer: " << &*firmPtr << "\n";
