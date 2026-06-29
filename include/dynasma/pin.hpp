@@ -426,6 +426,26 @@ template <class T> struct hash<dynasma::PinPtr<T>> {
         return (size_t)x.m_p_ctr;
     }
 };
+
+// Nullable-pointer optional. The full interface is inherited from
+// OptionalPtrBase. only the special members (not inheritable by 'using') are
+// re-declared so they delegate to the base.
+template <class T>
+class optional<dynasma::PinPtr<T>>
+    : public dynasma::OptionalPtrBase<dynasma::PinPtr<T>> {
+    using Base = dynasma::OptionalPtrBase<dynasma::PinPtr<T>>;
+
+  public:
+    using value_type = dynasma::PinPtr<T>;
+    using Base::Base;
+    using Base::operator=;
+
+    optional() = default;
+    optional(const optional &) = default;
+    optional(optional &&) = default;
+    optional &operator=(const optional &) = default;
+    optional &operator=(optional &&) = default;
+};
 } // namespace std
 
 #endif // INCLUDED_DYNASMA_SHARED_POINTER_H
