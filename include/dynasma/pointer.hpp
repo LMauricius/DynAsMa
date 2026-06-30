@@ -563,7 +563,8 @@ template <class PtrT> class OptionalPtrBase {
         else
             ctr_word() = nullptr;
     }
-    OptionalPtrBase(OptionalPtrBase &&other) {
+    OptionalPtrBase(OptionalPtrBase &&other) noexcept(
+        std::is_nothrow_move_constructible_v<PtrT>) {
         if (other.has_value())
             construct(std::move(*other.ptr()));
         else
@@ -624,7 +625,9 @@ template <class PtrT> class OptionalPtrBase {
             reset();
         return *this;
     }
-    OptionalPtrBase &operator=(OptionalPtrBase &&other) {
+    OptionalPtrBase &operator=(OptionalPtrBase &&other) noexcept(
+        std::is_nothrow_move_assignable_v<PtrT> &&
+        std::is_nothrow_move_constructible_v<PtrT>) {
         if (other.has_value())
             assign(std::move(*other.ptr()));
         else
@@ -664,12 +667,13 @@ template <class PtrT> class OptionalPtrBase {
 
     // Observer
 
-    const PtrT *operator->() const { return ptr(); }
-    PtrT *operator->() { return ptr(); }
+    const PtrT *operator->() const noexcept { return ptr(); }
+    PtrT *operator->() noexcept { return ptr(); }
 
-    const PtrT &operator*() const & { return *ptr(); }
-    PtrT &operator*() & { return *ptr(); }
-    PtrT &&operator*() && { return std::move(*ptr()); }
+    const PtrT &operator*() const & noexcept { return *ptr(); }
+    PtrT &operator*() & noexcept { return *ptr(); }
+    PtrT &&operator*() && noexcept { return std::move(*ptr()); }
+    const PtrT &&operator*() const && noexcept { return std::move(*ptr()); }
 
     explicit operator bool() const noexcept { return has_value(); }
     bool has_value() const noexcept { return ctr_word() != nullptr; }
@@ -685,6 +689,11 @@ template <class PtrT> class OptionalPtrBase {
         return *ptr();
     }
     PtrT &&value() && {
+        if (!has_value())
+            throw std::bad_optional_access();
+        return std::move(*ptr());
+    }
+    const PtrT &&value() const && {
         if (!has_value())
             throw std::bad_optional_access();
         return std::move(*ptr());
@@ -747,7 +756,7 @@ template <class PtrT> class OptionalPtrBase {
 
     // Modifiers
 
-    void reset() {
+    void reset() noexcept {
         if (has_value()) {
             ptr()->~PtrT();
             ctr_word() = nullptr;
@@ -760,7 +769,9 @@ template <class PtrT> class OptionalPtrBase {
         return *ptr();
     }
 
-    void swap(OptionalPtrBase &other) {
+    void swap(OptionalPtrBase &other) noexcept(
+        std::is_nothrow_move_constructible_v<PtrT> &&
+        std::is_nothrow_swappable_v<PtrT>) {
         if (has_value() && other.has_value()) {
             // PtrT has no member swap; use a move dance
             PtrT tmp(std::move(*ptr()));
