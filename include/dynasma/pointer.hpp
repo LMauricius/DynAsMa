@@ -540,7 +540,13 @@ template <class PtrT> class OptionalPtrBase {
 
     // Constructs the contained pointer in place; assumes currently empty.
     template <class... Args> void construct(Args &&...args) {
-        ::new (static_cast<void *>(&m_value)) PtrT(std::forward<Args>(args)...);
+        try {
+            ::new (static_cast<void *>(&m_value))
+                PtrT(std::forward<Args>(args)...);
+        } catch (...) {
+            set_empty();
+            throw;
+        }
     }
 
     // Assigns a value, reusing the contained pointer's own assignment (which
