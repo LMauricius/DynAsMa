@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #ifndef INCLUDED_DYNASMA_POINTER_H
 #define INCLUDED_DYNASMA_POINTER_H
 
@@ -38,6 +39,7 @@ concept RawPointerCastable =
     PointerCastable<To, From> && RawConvertibleToPtr<From>;
 
 template <class T> class FirmPtr;
+template <class PtrT> class OptionalPtrBase;
 
 /**
  * @brief A lazy reference to an object. Doesn't ensure the object is loaded.
@@ -52,6 +54,7 @@ template <class T> class LazyPtr
 
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
+    friend class OptionalPtrBase<LazyPtr<T>>;
 
     RefCtr *m_p_ctr;
 
@@ -216,6 +219,7 @@ template <class T> class FirmPtr
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
     template <class O> friend class PinPtr;
+    friend class OptionalPtrBase<FirmPtr<T>>;
 
     RefCtr *m_p_ctr;
     T *m_p_object;
@@ -526,13 +530,17 @@ template <class PtrT> class OptionalPtrBase {
 
     // Empty and engaged states share storage through a union. CtrHead exposes
     // the `RefCtr* m_p_ctr` word that every PtrT carries as its first member
-    struct CtrHead {
+    struct alignas(PtrT) CtrHead {
         RefCtr *m_p_ctr;
     };
     union {
         CtrHead m_head;
         PtrT m_value;
     };
+
+    static_assert(offsetof(CtrHead, m_p_ctr) == offsetof(PtrT, m_p_ctr) &&
+                      alignof(CtrHead) == alignof(PtrT),
+                  "The pointer type doesn't have the expected layout");
 
     // --- storage helpers ---
 
