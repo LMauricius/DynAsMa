@@ -1,0 +1,319 @@
+#pragma once
+#ifndef INCLUDED_DYNASMA_OPTIONAL_H
+#define INCLUDED_DYNASMA_OPTIONAL_H
+
+#include "dynasma/util/ref_management.hpp"
+
+#include <cstddef>
+#include <functional>
+#include <optional>
+#include <utility>
+
+namespace dynasma {
+
+/**
+ * @brief Shared implementation of std::optional for the ref-counted pointer
+ * types (LazyPtr / FirmPtr / PinPtr). std::optional<...Ptr<...>> is used as a
+ * nullable pointer.
+ *
+ * None of the pointer types can hold a nullptr as a valid value, so a null
+ * counter pointer is used as the "no value" sentinel instead of a separate
+ * bool flag. An engaged optional is bit-for-bit identical to the pointer it
+ * holds, and an empty one only differs by storing nullptr in the counter slot.
+ *
+ * The contained pointer, when engaged, lives directly as the active member of
+ * an anonymous union (@ref m_value), the other member (@ref CtrHead) exposing
+ * the shared leading counter word.
+ *
+ * @note Relies on every PtrT being a standard-layout struct with its
+ * `PolymorphicReferenceCounter* m_p_ctr` as the first member (true for all
+ * three pointer types). PtrT and CtrHead therefore share a common initial
+ * sequence, so the counter word can be read through CtrHead whichever member
+ * is active; engaged <=> that word is non-null.
+ */
+template <class PtrT> class OptionalPtrBase {
+    template <class O> friend class OptionalPtrBase;
+
+    using RefCtr = PolymorphicReferenceCounter;
+
+    // Empty and engaged states share storage through a union. CtrHead exposes
+    // the `RefCtr* m_p_ctr` word that every PtrT carries as its first member
+    struct alignas(PtrT) CtrHead {
+        RefCtr *m_p_ctr;
+    };
+    union {
+        CtrHead m_head;
+        PtrT m_value;
+    };
+
+    static_assert(offsetof(CtrHead, m_p_ctr) == offsetof(PtrT, m_p_ctr) &&
+                      alignof(CtrHead) == alignof(PtrT),
+                  "The pointer type doesn't have the expected layout");
+
+    // --- storage helpers ---
+
+    // Activates m_head with the null sentinel. Assumes no member is currently
+    // active (raw storage, or right after the contained pointer was destroyed).
+    void set_empty() noexcept { m_head.m_p_ctr = nullptr; }
+
+    // Constructs the contained pointer in place; assumes currently empty.
+    template <class... Args> void construct(Args &&...args) {
+        try {
+            ::new (static_cast<void *>(&m_value))
+                PtrT(std::forward<Args>(args)...);
+        } catch (...) {
+            set_empty();
+            throw;
+        }
+    }
+
+    // Assigns a value, reusing the contained pointer's own assignment (which
+    // performs the proper release/hold) when already engaged, else constructs.
+    template <class V> void assign(V &&value) {
+        if (has_value())
+            m_value = std::forward<V>(value);
+        else
+            construct(std::forward<V>(value));
+    }
+
+  public:
+    using value_type = PtrT;
+
+    // Constructors
+
+    OptionalPtrBase() noexcept : m_head{nullptr} {}
+    OptionalPtrBase(std::nullopt_t) noexcept : m_head{nullptr} {}
+
+    OptionalPtrBase(const OptionalPtrBase &other) {
+        if (other.has_value())
+            construct(other.m_value);
+        else
+            set_empty();
+    }
+    OptionalPtrBase(OptionalPtrBase &&other) noexcept(
+        std::is_nothrow_move_constructible_v<PtrT>) {
+        if (other.has_value())
+            construct(std::move(other.m_value));
+        else
+            set_empty();
+    }
+
+    // Converting from a compatible optional (e.g. derived -> base pointer)
+    template <class P2>
+    OptionalPtrBase(const OptionalPtrBase<P2> &other)
+        requires std::is_constructible_v<PtrT, const P2 &>
+    {
+        if (other.has_value())
+            construct(other.m_value);
+        else
+            set_empty();
+    }
+    template <class P2>
+    OptionalPtrBase(OptionalPtrBase<P2> &&other)
+        requires std::is_constructible_v<PtrT, P2 &&>
+    {
+        if (other.has_value())
+            construct(std::move(other.m_value));
+        else
+            set_empty();
+    }
+
+    // In-place construction of the contained pointer
+    template <class... Args>
+    explicit OptionalPtrBase(std::in_place_t, Args &&...args) {
+        construct(std::forward<Args>(args)...);
+    }
+
+    // From a pointer value (or anything a PtrT can be built from)
+    template <class U = PtrT>
+    OptionalPtrBase(U &&value)
+        requires(std::is_constructible_v<PtrT, U> &&
+                 !std::is_same_v<std::remove_cvref_t<U>, OptionalPtrBase> &&
+                 !std::is_same_v<std::remove_cvref_t<U>, std::in_place_t>)
+    {
+        construct(std::forward<U>(value));
+    }
+
+    // Destructor
+
+    ~OptionalPtrBase() { reset(); }
+
+    // Assignment
+
+    OptionalPtrBase &operator=(std::nullopt_t) {
+        reset();
+        return *this;
+    }
+
+    OptionalPtrBase &operator=(const OptionalPtrBase &other) {
+        if (other.has_value())
+            assign(other.m_value);
+        else
+            reset();
+        return *this;
+    }
+    OptionalPtrBase &operator=(OptionalPtrBase &&other) noexcept(
+        std::is_nothrow_move_assignable_v<PtrT> &&
+        std::is_nothrow_move_constructible_v<PtrT>) {
+        if (other.has_value())
+            assign(std::move(other.m_value));
+        else
+            reset();
+        return *this;
+    }
+
+    template <class P2>
+    OptionalPtrBase &operator=(const OptionalPtrBase<P2> &other)
+        requires std::is_constructible_v<PtrT, const P2 &>
+    {
+        if (other.has_value())
+            assign(other.m_value);
+        else
+            reset();
+        return *this;
+    }
+    template <class P2>
+    OptionalPtrBase &operator=(OptionalPtrBase<P2> &&other)
+        requires std::is_constructible_v<PtrT, P2 &&>
+    {
+        if (other.has_value())
+            assign(std::move(other.m_value));
+        else
+            reset();
+        return *this;
+    }
+
+    template <class U = PtrT>
+    OptionalPtrBase &operator=(U &&value)
+        requires(std::is_constructible_v<PtrT, U> &&
+                 !std::is_same_v<std::remove_cvref_t<U>, OptionalPtrBase>)
+    {
+        assign(std::forward<U>(value));
+        return *this;
+    }
+
+    // Observer
+
+    const PtrT *operator->() const noexcept { return &m_value; }
+    PtrT *operator->() noexcept { return &m_value; }
+
+    const PtrT &operator*() const & noexcept { return m_value; }
+    PtrT &operator*() & noexcept { return m_value; }
+    PtrT &&operator*() && noexcept { return std::move(m_value); }
+    const PtrT &&operator*() const && noexcept { return std::move(m_value); }
+
+    explicit operator bool() const noexcept { return has_value(); }
+    bool has_value() const noexcept { return m_head.m_p_ctr != nullptr; }
+
+    PtrT &value() & {
+        if (!has_value())
+            throw std::bad_optional_access();
+        return m_value;
+    }
+    const PtrT &value() const & {
+        if (!has_value())
+            throw std::bad_optional_access();
+        return m_value;
+    }
+    PtrT &&value() && {
+        if (!has_value())
+            throw std::bad_optional_access();
+        return std::move(m_value);
+    }
+    const PtrT &&value() const && {
+        if (!has_value())
+            throw std::bad_optional_access();
+        return std::move(m_value);
+    }
+
+    template <class U> PtrT value_or(U &&default_value) const & {
+        return has_value() ? m_value
+                           : static_cast<PtrT>(std::forward<U>(default_value));
+    }
+    template <class U> PtrT value_or(U &&default_value) && {
+        return has_value() ? std::move(m_value)
+                           : static_cast<PtrT>(std::forward<U>(default_value));
+    }
+
+    // Monadic operations
+
+    template <class F> auto and_then(F &&f) & {
+        using R = std::remove_cvref_t<std::invoke_result_t<F, PtrT &>>;
+        return has_value() ? std::invoke(std::forward<F>(f), m_value) : R{};
+    }
+    template <class F> auto and_then(F &&f) const & {
+        using R = std::remove_cvref_t<std::invoke_result_t<F, const PtrT &>>;
+        return has_value() ? std::invoke(std::forward<F>(f), m_value) : R{};
+    }
+    template <class F> auto and_then(F &&f) && {
+        using R = std::remove_cvref_t<std::invoke_result_t<F, PtrT &&>>;
+        return has_value() ? std::invoke(std::forward<F>(f), std::move(m_value))
+                           : R{};
+    }
+
+    template <class F> auto transform(F &&f) & {
+        using U = std::remove_cv_t<std::invoke_result_t<F, PtrT &>>;
+        return has_value()
+                   ? std::optional<U>(std::invoke(std::forward<F>(f), m_value))
+                   : std::optional<U>{};
+    }
+    template <class F> auto transform(F &&f) const & {
+        using U = std::remove_cv_t<std::invoke_result_t<F, const PtrT &>>;
+        return has_value()
+                   ? std::optional<U>(std::invoke(std::forward<F>(f), m_value))
+                   : std::optional<U>{};
+    }
+    template <class F> auto transform(F &&f) && {
+        using U = std::remove_cv_t<std::invoke_result_t<F, PtrT &&>>;
+        return has_value() ? std::optional<U>(std::invoke(std::forward<F>(f),
+                                                          std::move(m_value)))
+                           : std::optional<U>{};
+    }
+
+    template <class F> std::optional<PtrT> or_else(F &&f) const & {
+        if (has_value())
+            return std::optional<PtrT>(m_value);
+        return std::invoke(std::forward<F>(f));
+    }
+    template <class F> std::optional<PtrT> or_else(F &&f) && {
+        if (has_value())
+            return std::optional<PtrT>(std::move(m_value));
+        return std::invoke(std::forward<F>(f));
+    }
+
+    // Modifiers
+
+    void reset() noexcept {
+        if (has_value()) {
+            m_value.~PtrT();
+            set_empty();
+        }
+    }
+
+    template <class... Args> PtrT &emplace(Args &&...args) {
+        reset();
+        construct(std::forward<Args>(args)...);
+        return m_value;
+    }
+
+    void swap(OptionalPtrBase &other) noexcept(
+        std::is_nothrow_move_constructible_v<PtrT> &&
+        std::is_nothrow_swappable_v<PtrT>) {
+        if (has_value() && other.has_value()) {
+            // PtrT has no member swap; use a move dance
+            PtrT tmp(std::move(m_value));
+            m_value = std::move(other.m_value);
+            other.m_value = std::move(tmp);
+        } else if (has_value()) {
+            other.construct(std::move(m_value));
+            reset();
+        } else if (other.has_value()) {
+            construct(std::move(other.m_value));
+            other.reset();
+        }
+    }
+};
+
+} // namespace dynasma
+
+#endif // INCLUDED_DYNASMA_OPTIONAL_H
