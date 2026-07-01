@@ -121,7 +121,7 @@ template <class T> class PinPtr {
     template <class M>
     PinPtr(PinPtr<M> &&other, T &subobject)
         : m_p_ctr(other.m_p_ctr), m_p_object(&subobject) {
-        m_p_ctr = &internal::NULL_REF_CTR;
+        other.m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
     }
 
@@ -129,7 +129,7 @@ template <class T> class PinPtr {
     PinPtr(PinPtr<M> &&other, O &subobject)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(&subobject) {
-        m_p_ctr = &internal::NULL_REF_CTR;
+        other.m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
     }
 
@@ -137,7 +137,7 @@ template <class T> class PinPtr {
     PinPtr(PinPtr<M> &&other, O &subobject)
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(dynamic_cast<T *>(&subobject)) {
-        m_p_ctr = &internal::NULL_REF_CTR;
+        other.m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
     }
 
