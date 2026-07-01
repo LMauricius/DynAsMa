@@ -2,3 +2,4 @@
 add_subdirectory(test1)
 add_subdirectory(test_caching)
 add_subdirectory(test_inheritance)
+add_subdirectory(test_pin)

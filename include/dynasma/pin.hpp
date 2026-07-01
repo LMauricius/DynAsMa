@@ -21,6 +21,7 @@ template <class T> class PinPtr {
 
     template <class O> friend class FirmPtr;
     template <class O> friend class PinPtr;
+    friend class OptionalPtrBase<PinPtr<T>>;
 
     // type-erased reference counter.
     using RefCtr = PolymorphicReferenceCounter;
