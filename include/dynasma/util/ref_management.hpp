@@ -32,22 +32,20 @@ template <class T> class ReferenceCounter {
     virtual void handle_forgettable_impl() = 0;
 
   public:
-    ReferenceCounter() : m_firmcount(0), m_lazycount(0), p_obj(nullptr){};
-    virtual ~ReferenceCounter(){};
+    ReferenceCounter() : m_firmcount(0), m_lazycount(0), p_obj(nullptr) {};
+    virtual ~ReferenceCounter() {};
 
     /**
      * @brief Raises the firm reference count
      * @note If the asset is not loaded, it will be loaded
-     * @returns reference to the loaded asset
      */
-    T &hold() {
+    void hold() {
         if (is_unloadable()) {
             m_firmcount++;
             handle_usable_impl();
         } else {
             m_firmcount++;
         }
-        return *p_obj;
     }
     /**
      * @brief Reduces the firm reference count
@@ -97,9 +95,7 @@ template <class T> class ReferenceCounter {
      * Check if the counter is forgettable based on the reference counts.
      * @return true if the object is forgettable, false otherwise
      */
-    bool is_forgettable() const {
-        return m_firmcount == 0 && m_lazycount == 0;
-    }
+    bool is_forgettable() const { return m_firmcount == 0 && m_lazycount == 0; }
 
     /**
      * @returns whether the asset is loaded
@@ -169,6 +165,7 @@ class NullRefCtr : public PolymorphicReferenceCounter {
     NullRefCtr() {
         this->p_obj = nullptr;
         // Always hold the global instance
+        // This won't properly set the p_object, but will increase m_firmcount
         this->hold();
     }
 

@@ -38,13 +38,14 @@ template <class T> class PinPtr {
   public:
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
-    PinPtr(RefCtr &ctr)
-        : m_p_ctr(&ctr),
-          m_p_object(
-              // assume the casting is possible, i.e. we have a valid pointer
-              // can be dereferenced -> is not nullptr
-              // this could be used to optimize for non-virtual inheritances
-              &*dynamic_cast<T *>(&ctr.hold())) {}
+    PinPtr(RefCtr &ctr) : m_p_ctr(&ctr) {
+        ctr.hold();
+
+        // assume the casting is possible, i.e. we have a valid pointer
+        // can be dereferenced -> is not nullptr
+        // this could be used to optimize for non-virtual inheritances
+        m_p_object = &*dynamic_cast<T *>(ctr.p_get());
+    }
 
     // Copy & move constructors for PinPtr
 
