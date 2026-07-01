@@ -196,10 +196,10 @@ template <class T> class PinPtr {
 
     // const PinPtr<O> &
     PinPtr &operator=(const PinPtr<T> &other) {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        m_p_ctr->hold();
 
         return *this;
     }
@@ -208,10 +208,10 @@ template <class T> class PinPtr {
     PinPtr &operator=(const PinPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        m_p_ctr->hold();
 
         return *this;
     }
@@ -220,10 +220,10 @@ template <class T> class PinPtr {
     PinPtr &operator=(const PinPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = &*dynamic_cast<T *>(other.m_p_object);
-        m_p_ctr->hold();
 
         return *this;
     }
@@ -269,10 +269,10 @@ template <class T> class PinPtr {
 
     // const FirmPtr<O> &
     PinPtr &operator=(const FirmPtr<T> &other) {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        m_p_ctr->hold();
 
         return *this;
     }
@@ -281,10 +281,10 @@ template <class T> class PinPtr {
     PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        m_p_ctr->hold();
 
         return *this;
     }
@@ -293,10 +293,10 @@ template <class T> class PinPtr {
     PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
+        other.m_p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = &*dynamic_cast<T *>(other.m_p_object);
-        m_p_ctr->hold();
 
         return *this;
     }

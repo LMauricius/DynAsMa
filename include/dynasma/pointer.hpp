@@ -109,15 +109,16 @@ template <class T> class LazyPtr
 
     // LazyPtr<T> &
     LazyPtr &operator=(const LazyPtr<T> &other) {
+        other.m_p_ctr->lazy_hold();
         m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
-        m_p_ctr->lazy_hold();
 
         return *this;
     }
 
     // LazyPtr<T> &&
     LazyPtr &operator=(LazyPtr<T> &&other) {
+        m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.lazy_hold();
@@ -130,9 +131,9 @@ template <class T> class LazyPtr
     LazyPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
+        other.m_p_ctr->lazy_hold();
         m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
-        m_p_ctr->lazy_hold();
 
         return *this;
     }
@@ -142,6 +143,7 @@ template <class T> class LazyPtr
     LazyPtr &operator=(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
     {
+        m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
         other.m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.lazy_hold();
@@ -153,9 +155,9 @@ template <class T> class LazyPtr
 
     // FirmPtr<T> &
     LazyPtr &operator=(const FirmPtr<T> &other) {
+        other.m_p_ctr->lazy_hold();
         m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
-        m_p_ctr->lazy_hold();
 
         return *this;
     }
@@ -165,9 +167,9 @@ template <class T> class LazyPtr
     LazyPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
     {
+        other.m_p_ctr->lazy_hold();
         m_p_ctr->lazy_release();
         m_p_ctr = other.m_p_ctr;
-        m_p_ctr->lazy_hold();
 
         return *this;
     }
