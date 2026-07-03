@@ -1,8 +1,3 @@
-// Demonstrates PinPtr: a shared firm reference that can point to a member /
-// sub-object owned by a FirmPtr, keeping the whole owner alive as long as the
-// pin lives. Uses makeStandalone so no pool bookkeeping is needed - the owner
-// self-destructs once its last firm/pin reference drops.
-
 #include "dynasma/pin.hpp"
 #include "dynasma/pointer.hpp"
 #include "dynasma/standalone.hpp"
