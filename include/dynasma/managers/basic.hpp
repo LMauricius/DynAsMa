@@ -132,9 +132,11 @@ class BasicManager : public virtual AbstractManager<Seed> {
 
     LazyPtr<ExposedAsset> register_asset(Seed &&seed) override {
         m_unloaded_registry.emplace_front(std::move(seed), *this);
-        m_unloaded_registry.front().setSelfRegistryPos(
-            &m_unloaded_registry, m_unloaded_registry.begin());
-        return LazyPtr<ExposedAsset>(m_unloaded_registry.front());
+        auto &ctr = m_unloaded_registry.front();
+        ctr.setSelfRegistryPos(&m_unloaded_registry,
+                               m_unloaded_registry.begin());
+        ctr.lazy_hold();
+        return LazyPtr<ExposedAsset>(ctr);
     }
     std::size_t clean(std::size_t bytenum) override
     {

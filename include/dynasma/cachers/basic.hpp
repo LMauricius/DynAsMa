@@ -157,6 +157,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         if (lb != m_searchable_registry.end() &&
             !(m_searchable_registry.key_comp()(seed, lb->first))) {
             // key already exists
+            lb->second->lazy_hold();
             return LazyPtr<ExposedAsset>(*(lb->second));
         } else {
             // the key does not exist in the map
@@ -175,6 +176,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
             newCtr.setSelfRegistryPos(&m_unloaded_registry,
                                       m_unloaded_registry.begin(), it);
 
+            newCtr.lazy_hold();
             return LazyPtr<ExposedAsset>(newCtr);
         }
     }

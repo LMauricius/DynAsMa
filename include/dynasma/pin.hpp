@@ -29,19 +29,16 @@ template <class T> class PinPtr {
     RefCtr *m_p_ctr;
     T *m_p_object;
 
-    // Internal constructor for when we know both the counter and the object
-    // The object must be owned by the ctr, otherwise causes U.B.
-    PinPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {
-        // still need to reference count
-        m_p_ctr->hold();
-    }
+    /// Internal constructor for when we know both the counter and the object
+    /// The object must be owned by the ctr, otherwise causes U.B.
+    /// @warning Doesn't increase the reference count, must be done manually
+    PinPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {}
 
   public:
-    // Internal constructor for managers
-    // The ctr must produce instances derived from T, otherwise causes U.B.
+    /// Internal constructor for managers
+    /// The ctr must produce instances derived from T, otherwise causes U.B.
+    /// @warning Doesn't increase the reference count, must be done manually
     PinPtr(RefCtr &ctr) : m_p_ctr(&ctr) {
-        ctr.hold();
-
         // assume the casting is possible, i.e. we have a valid pointer
         // can be dereferenced -> is not nullptr
         // this could be used to optimize for non-virtual inheritances
@@ -374,6 +371,7 @@ template <class T> class PinPtr {
 
 template <class To, class From>
 PinPtr<To> static_pointer_cast(const PinPtr<From> &from) {
+    from.m_p_ctr->hold();
     return PinPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
@@ -385,6 +383,7 @@ PinPtr<To> static_pointer_cast(PinPtr<From> &&from) {
 }
 template <class To, class From>
 PinPtr<To> dynamic_pointer_cast(const PinPtr<From> &from) {
+    from.m_p_ctr->hold();
     // we cast the reference, not a pointer, so it throws on errors
     return PinPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
 }
@@ -398,6 +397,7 @@ PinPtr<To> dynamic_pointer_cast(PinPtr<From> &&from) {
 }
 template <class To, class From>
 PinPtr<To> const_pointer_cast(const PinPtr<From> &from) {
+    from.m_p_ctr->hold();
     return PinPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
@@ -409,6 +409,7 @@ PinPtr<To> const_pointer_cast(PinPtr<From> &&from) {
 }
 template <class To, class From>
 PinPtr<To> reinterpret_pointer_cast(const PinPtr<From> &from) {
+    from.m_p_ctr->hold();
     return PinPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
