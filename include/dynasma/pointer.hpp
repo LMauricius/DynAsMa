@@ -3,6 +3,7 @@
 #define INCLUDED_DYNASMA_POINTER_H
 
 #include "dynasma/core_concepts.hpp"
+#include "dynasma/util/cast.hpp"
 #include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/optional.hpp"
 #include "dynasma/util/ref_management.hpp"
@@ -12,28 +13,6 @@
 #include <type_traits>
 
 namespace dynasma {
-
-template <class To, class From>
-concept PointerCastable =
-    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class From, class To>
-concept PointerNoCastNeeded =
-    std::same_as<std::remove_cv_t<std::decay_t<From>>,
-                 std::remove_cv_t<std::decay_t<To>>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class From, class To>
-concept PointerDynamicCastNeeded =
-    !std::same_as<std::remove_cv_t<std::decay_t<From>>,
-                  std::remove_cv_t<std::decay_t<To>>> &&
-    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class To, class From>
-concept RawPointerCastable =
-    PointerCastable<To, From> && RawConvertibleToPtr<From>;
 
 template <class T> class FirmPtr;
 template <class PtrT> class OptionalPtrBase;
@@ -55,53 +34,79 @@ template <class T> class LazyPtr
 
     RefCtr *m_p_ctr;
 
+    /// Used internally for common initialization. Sets the members and counts
+    void initialize_n_hold(RefCtr *p_ctr) {
+        m_p_ctr = p_ctr;
+        p_ctr->lazy_hold();
+    }
+
+    /// Used internally for making it into 'moved from' state
+    void move_from() {
+        m_p_ctr = &internal::NULL_REF_CTR;
+        internal::NULL_REF_CTR.lazy_hold();
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    LazyPtr &copy_assign(RefCtr *p_ctr) {
+        p_ctr->lazy_hold();
+        m_p_ctr->lazy_release();
+        m_p_ctr = p_ctr;
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr) {
+        m_p_ctr->lazy_release();
+        m_p_ctr = p_ctr;
+    }
+
   public:
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
-    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) { ctr.lazy_hold(); }
+    /// @warning Doesn't increase the reference count, must be done manually
+    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) {}
 
     // Constructor for casting raw pointers to ConvertibleToPtr objects
     template <class O>
     LazyPtr(O *p_object)
         requires RawPointerCastable<T, O>
-        : m_p_ctr(p_object->m_p_counter) {}
+        : m_p_ctr(p_object->m_p_counter) {
+        m_p_ctr->lazy_hold();
+    }
 
     // Copy & Move constructors for LazyPtr
 
     // LazyPtr<T> &
-    LazyPtr(const LazyPtr<T> &other) : LazyPtr(*other.m_p_ctr) {}
+    LazyPtr(const LazyPtr<T> &other) { initialize_n_hold(other.m_p_ctr); }
 
     // LazyPtr<T> &&
-    LazyPtr(LazyPtr<T> &&other) : m_p_ctr(other.m_p_ctr) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.lazy_hold();
-    }
+    LazyPtr(LazyPtr<T> &&other) : m_p_ctr(other.m_p_ctr) { other.move_from(); }
 
     // LazyPtr<O> &
     template <class O>
     LazyPtr(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
-        : LazyPtr(*other.m_p_ctr) {}
+    {
+        initialize_n_hold(other.m_p_ctr);
+    }
 
     // LazyPtr<O> &&
     template <class O>
     LazyPtr(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.lazy_hold();
+        other.move_from();
     }
 
-    // Copy & Move constructors for FirmPtr
-
-    // FirmPtr<T> &
-    LazyPtr(const FirmPtr<T> &other) : LazyPtr(*other.m_p_ctr) {}
+    // Copy constructors for FirmPtr
 
     // FirmPtr<O> &
     template <class O>
     LazyPtr(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
-        : LazyPtr(*other.m_p_ctr) {}
+    {
+        initialize_n_hold(other.m_p_ctr);
+    }
 
     ~LazyPtr() { m_p_ctr->lazy_release(); }
 
@@ -109,20 +114,13 @@ template <class T> class LazyPtr
 
     // LazyPtr<T> &
     LazyPtr &operator=(const LazyPtr<T> &other) {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     // LazyPtr<T> &&
     LazyPtr &operator=(LazyPtr<T> &&other) {
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.lazy_hold();
-
+        move_assign(other.m_p_ctr);
+        other.move_from();
         return *this;
     }
 
@@ -131,11 +129,7 @@ template <class T> class LazyPtr
     LazyPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     // LazyPtr<O> &&
@@ -143,35 +137,19 @@ template <class T> class LazyPtr
     LazyPtr &operator=(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
     {
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.lazy_hold();
-
+        move_assign(other.m_p_ctr);
+        other.move_from();
         return *this;
     }
 
-    // Copy & Move assignment for FirmPtr
-
-    // FirmPtr<T> &
-    LazyPtr &operator=(const FirmPtr<T> &other) {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
-    }
+    // Copy assignment for FirmPtr
 
     // FirmPtr<O> &
     template <class O>
     LazyPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     /**
@@ -179,10 +157,8 @@ template <class T> class LazyPtr
      * @returns a FirmPtr to the object
      */
     FirmPtr<T> getLoaded() const {
-        if (m_p_ctr)
-            return FirmPtr<T>(*m_p_ctr);
-        else
-            return FirmPtr<T>(internal::NULL_REF_CTR);
+        m_p_ctr->hold();
+        return FirmPtr<T>(*m_p_ctr);
     }
 
     // Comparison operators
@@ -221,23 +197,64 @@ template <class T> class FirmPtr
     RefCtr *m_p_ctr;
     T *m_p_object;
 
-    // Internal constructor for when we know both the counter and the object
-    // The object must have been produced by the ctr, otherwise causes U.B.
-    FirmPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {
-        // still need to reference count
-        m_p_ctr->hold();
+    /// Used internally for common initialization. Sets the members and counts
+    void initialize_n_hold(RefCtr *p_ctr, T *p_object) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        p_ctr->hold();
+    }
+
+    /// Used internally for common initialization. Sets the members and counts
+    void initialize_n_hold(RefCtr *p_ctr) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_ctr->p_get();
+        p_ctr->hold();
+    }
+
+    /// Used internally for making it into 'moved from' state
+    void move_from() {
+        m_p_ctr = &internal::NULL_REF_CTR;
+        internal::NULL_REF_CTR.hold();
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    FirmPtr &copy_assign(RefCtr *p_ctr, T *p_object) {
+        p_ctr->hold();
+        m_p_ctr->release();
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    FirmPtr &copy_assign(RefCtr *p_ctr) {
+        p_ctr->hold();
+        m_p_ctr->release();
+        m_p_ctr = p_ctr;
+        m_p_object = p_ctr->p_get();
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr, T *p_object) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        p_ctr->hold();
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_ctr->p_get();
+        p_ctr->hold();
     }
 
   public:
-    // Internal constructor for managers
-    // The ctr must produce instances derived from T, otherwise causes U.B.
+    /// Internal constructor for managers
+    /// The ctr must produce instances derived from T, otherwise causes U.B.
+    /// @warning Doesn't increase the reference count, must be done manually
     FirmPtr(RefCtr &ctr) : m_p_ctr(&ctr) {
-        ctr.hold();
-
-        // assume the casting is possible, i.e. we have a valid pointer
-        // can be dereferenced -> is not nullptr
-        // this could be used to optimize for non-virtual inheritances
-        m_p_object = &*dynamic_cast<T *>(ctr.p_get());
+        m_p_object = internal::assume_dynamic_cast<T *>(ctr.p_get());
     }
 
     // Constructor for casting raw pointers to ConvertibleToPtr objects
@@ -252,60 +269,41 @@ template <class T> class FirmPtr
     // Copy & move constructors for FirmPtr
 
     // const FirmPtr<O> &
-    FirmPtr(const FirmPtr<T> &other)
-        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        m_p_ctr->hold();
+    FirmPtr(const FirmPtr<T> &other) {
+        initialize_n_hold(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     FirmPtr(const FirmPtr<O> &other)
-        requires PointerNoCastNeeded<O, T>
-        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        m_p_ctr->hold();
-    }
-
-    template <class O>
-    FirmPtr(const FirmPtr<O> &other)
-        requires PointerDynamicCastNeeded<O, T>
-        : m_p_ctr(other.m_p_ctr),
-          m_p_object(&*dynamic_cast<T *>(other.m_p_object)) {
-        m_p_ctr->hold();
+        requires PointerCastable<O, T>
+    {
+        initialize_n_hold(other.m_p_ctr,
+                          internal::assume_convert<T>(other.m_p_object));
     }
 
     // FirmPtr<O> &&
     FirmPtr(FirmPtr<T> &&other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O>
     FirmPtr(FirmPtr<O> &&other)
-        requires PointerNoCastNeeded<O, T>
-        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
-    }
-
-    template <class O>
-    FirmPtr(FirmPtr<O> &&other)
-        requires PointerDynamicCastNeeded<O, T>
+        requires PointerCastable<O, T>
         : m_p_ctr(other.m_p_ctr),
-          m_p_object(dynamic_cast<T *>(other.m_p_object)) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+          m_p_object(internal::assume_convert<T>(other.m_p_object)) {
+        other.move_from();
     }
 
-    // Copy & move constructor for LazyPtr
-
-    // LazyPtr<T> &
-    FirmPtr(const LazyPtr<T> &other) : FirmPtr(*other.m_p_ctr) {}
+    // Copy constructor for LazyPtr
 
     // LazyPtr<O> &
     template <class O>
     FirmPtr(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
-        : FirmPtr(*other.m_p_ctr) {}
+    {
+        initialize_n_hold(other.m_p_ctr);
+    }
 
     ~FirmPtr() { m_p_ctr->release(); }
 
@@ -313,101 +311,43 @@ template <class T> class FirmPtr
 
     // const FirmPtr<O> &
     FirmPtr &operator=(const FirmPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
-        requires PointerNoCastNeeded<O, T>
+        requires PointerCastable<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
-    }
-
-    template <class O>
-    FirmPtr &operator=(const FirmPtr<O> &other)
-        requires PointerDynamicCastNeeded<O, T>
-    {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = &*dynamic_cast<T *>(other.m_p_object);
-
-        return *this;
+        return copy_assign(other.m_p_ctr,
+                           internal::assume_convert<T>(other.m_p_object));
     }
 
     // FirmPtr<O> &&
     FirmPtr &operator=(FirmPtr<T> &&other) {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
-
+        move_assign(other.m_p_ctr, other.m_p_object);
+        other.move_from();
         return *this;
     }
 
     template <class O>
     FirmPtr &operator=(FirmPtr<O> &&other)
-        requires PointerNoCastNeeded<O, T>
+        requires PointerCastable<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
-
+        move_assign(other.m_p_ctr,
+                    internal::assume_convert<T>(other.m_p_object));
+        other.move_from();
         return *this;
     }
 
-    template <class O>
-    FirmPtr &operator=(FirmPtr<O> &&other)
-        requires PointerDynamicCastNeeded<O, T>
-    {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = &*dynamic_cast<T *>(other.m_p_object);
-
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
-
-        return *this;
-    }
-
-    // Copy & move assignment for LazyPtr
-
-    // LazyPtr&<T> &
-    FirmPtr &operator=(const LazyPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = &*dynamic_cast<T *>(m_p_ctr->p_get());
-
-        return *this;
-    }
+    // Copy assignment for LazyPtr
 
     // LazyPtr&<O> &
     template <class O>
     FirmPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = &*dynamic_cast<T *>(m_p_ctr->p_get());
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_ctr->p_get()));
     }
 
     // Comparison operators
@@ -453,17 +393,18 @@ template <class T> class FirmPtr
 
 template <class To, class From>
 FirmPtr<To> static_pointer_cast(const FirmPtr<From> &from) {
+    from.m_p_ctr->hold();
     return FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
 FirmPtr<To> static_pointer_cast(FirmPtr<From> &&from) {
     auto ret = FirmPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
 FirmPtr<To> dynamic_pointer_cast(const FirmPtr<From> &from) {
+    from.m_p_ctr->hold();
     // we cast the reference, not a pointer, so it throws on errors
     return FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
 }
@@ -472,31 +413,30 @@ FirmPtr<To> dynamic_pointer_cast(FirmPtr<From> &&from) {
     // we cast the reference, not a pointer, so it throws on errors
     auto ret =
         FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
 FirmPtr<To> const_pointer_cast(const FirmPtr<From> &from) {
+    from.m_p_ctr->hold();
     return FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
 FirmPtr<To> const_pointer_cast(FirmPtr<From> &&from) {
     auto ret = FirmPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
 FirmPtr<To> reinterpret_pointer_cast(const FirmPtr<From> &from) {
+    from.m_p_ctr->hold();
     return FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
 }
 template <class To, class From>
 FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
     auto ret =
         FirmPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 

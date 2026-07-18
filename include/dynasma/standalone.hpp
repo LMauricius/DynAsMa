@@ -40,8 +40,10 @@ class StandaloneRefCtr : public PolymorphicReferenceCounter {
 
 template <StandardPolymorphic T, class... Params>
 FirmPtr<T> makeStandalone(Params... params) {
-    return FirmPtr<T>(
-        *(new internal::StandaloneRefCtr<T>(std::forward<Params>(params)...)));
+    auto p_ctr =
+        new internal::StandaloneRefCtr<T>(std::forward<Params>(params)...);
+    p_ctr->hold();
+    return FirmPtr<T>(*p_ctr);
 }
 
 } // namespace dynasma

@@ -76,7 +76,9 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
     ~NaiveKeeper() = default;
 
     LazyPtr<ExposedAsset> new_asset(const Seed &seed) override {
-        return LazyPtr<ExposedAsset>(*(new ProxyRefCtr(seed, *this)));
+        auto p_ctr = new ProxyRefCtr(seed, *this);
+        p_ctr->lazy_hold();
+        return LazyPtr<ExposedAsset>(*p_ctr);
     }
     std::size_t clean(std::size_t bytenum) override
     {
