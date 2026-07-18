@@ -125,12 +125,17 @@ template <class T> class PinPtr {
         other.move_from();
     }
 
-    // Copy & move constructor for FirmPtr
+    // Copy constructor for LazyPtr
 
-    // const FirmPtr<O> &
-    PinPtr(const FirmPtr<T> &other) {
-        initialize_n_hold(other.m_p_ctr, other.m_p_object);
+    template <class O>
+    PinPtr(const LazyPtr<O> &other)
+        requires PointerCastable<O, T>
+    {
+        initialize_n_hold(other.m_p_ctr,
+                          internal::assume_convert<T>(other.m_p_ctr->p_get()));
     }
+
+    // Copy & move constructor for FirmPtr
 
     template <class O>
     PinPtr(const FirmPtr<O> &other)
@@ -138,12 +143,6 @@ template <class T> class PinPtr {
     {
         initialize_n_hold(other.m_p_ctr,
                           internal::assume_convert<T>(other.m_p_object));
-    }
-
-    // FirmPtr<O> &&
-    PinPtr(FirmPtr<T> &&other)
-        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.move_from();
     }
 
     template <class O>
@@ -190,13 +189,20 @@ template <class T> class PinPtr {
         return *this;
     }
 
+    // copy assignment for LazyPtr
+
+    // const FirmPtr<O> &
+    template <class O>
+    PinPtr &operator=(const LazyPtr<O> &other)
+        requires PointerCastable<O, T>
+    {
+        return copy_assign(other.m_p_ctr,
+                           internal::assume_convert<T>(other.m_p_ctr->p_get()));
+    }
+
     // copy & move assignment for FirmPtr
 
     // const FirmPtr<O> &
-    PinPtr &operator=(const FirmPtr<T> &other) {
-        return copy_assign(other.m_p_ctr, other.m_p_object);
-    }
-
     template <class O>
     PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<O, T>
@@ -206,12 +212,6 @@ template <class T> class PinPtr {
     }
 
     // FirmPtr<O> &&
-    PinPtr &operator=(FirmPtr<T> &&other) {
-        move_assign(other.m_p_ctr, other.m_p_object);
-        other.move_from();
-        return *this;
-    }
-
     template <class O>
     PinPtr &operator=(FirmPtr<O> &&other)
         requires PointerCastable<O, T>

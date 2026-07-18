@@ -98,10 +98,7 @@ template <class T> class LazyPtr
         other.move_from();
     }
 
-    // Copy & Move constructors for FirmPtr
-
-    // FirmPtr<T> &
-    LazyPtr(const FirmPtr<T> &other) { initialize_n_hold(other.m_p_ctr); }
+    // Copy constructors for FirmPtr
 
     // FirmPtr<O> &
     template <class O>
@@ -145,12 +142,7 @@ template <class T> class LazyPtr
         return *this;
     }
 
-    // Copy & Move assignment for FirmPtr
-
-    // FirmPtr<T> &
-    LazyPtr &operator=(const FirmPtr<T> &other) {
-        return copy_assign(other.m_p_ctr);
-    }
+    // Copy assignment for FirmPtr
 
     // FirmPtr<O> &
     template <class O>
@@ -303,10 +295,7 @@ template <class T> class FirmPtr
         other.move_from();
     }
 
-    // Copy & move constructor for LazyPtr
-
-    // LazyPtr<T> &
-    FirmPtr(const LazyPtr<T> &other) { initialize_n_hold(other.m_p_ctr); }
+    // Copy constructor for LazyPtr
 
     // LazyPtr<O> &
     template <class O>
@@ -350,13 +339,7 @@ template <class T> class FirmPtr
         return *this;
     }
 
-    // Copy & move assignment for LazyPtr
-
-    // LazyPtr&<T> &
-    FirmPtr &operator=(const LazyPtr<T> &other) {
-        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
-                                              other.m_p_ctr->p_get()));
-    }
+    // Copy assignment for LazyPtr
 
     // LazyPtr&<O> &
     template <class O>
