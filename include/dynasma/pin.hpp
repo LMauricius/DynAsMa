@@ -42,6 +42,22 @@ template <class T> class PinPtr {
         internal::NULL_REF_CTR.hold();
     }
 
+    /// Used internally for common assignment. Sets the members and counts
+    PinPtr &copy_assign(RefCtr *p_ctr, T *p_object) {
+        p_ctr->hold();
+        m_p_ctr->release();
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr, T *p_object) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        p_ctr->hold();
+    }
+
   public:
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
@@ -188,45 +204,28 @@ template <class T> class PinPtr {
 
     // const PinPtr<O> &
     PinPtr &operator=(const PinPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     PinPtr &operator=(const PinPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     PinPtr &operator=(const PinPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_object));
     }
 
     // PinPtr<O> &&
     PinPtr &operator=(PinPtr<T> &&other) {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -234,11 +233,8 @@ template <class T> class PinPtr {
     PinPtr &operator=(PinPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -246,11 +242,9 @@ template <class T> class PinPtr {
     PinPtr &operator=(PinPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
+        move_assign(other.m_p_ctr,
+                    internal::assume_dynamic_cast<T *>(other.m_p_object));
         other.move_from();
-
         return *this;
     }
 
@@ -258,45 +252,28 @@ template <class T> class PinPtr {
 
     // const FirmPtr<O> &
     PinPtr &operator=(const FirmPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     PinPtr &operator=(const FirmPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_object));
     }
 
     // FirmPtr<O> &&
     PinPtr &operator=(FirmPtr<T> &&other) {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -304,11 +281,8 @@ template <class T> class PinPtr {
     PinPtr &operator=(FirmPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -316,11 +290,9 @@ template <class T> class PinPtr {
     PinPtr &operator=(FirmPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
+        move_assign(other.m_p_ctr,
+                    internal::assume_dynamic_cast<T *>(other.m_p_object));
         other.move_from();
-
         return *this;
     }
 

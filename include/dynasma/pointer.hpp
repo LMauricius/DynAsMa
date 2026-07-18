@@ -68,6 +68,20 @@ template <class T> class LazyPtr
         internal::NULL_REF_CTR.lazy_hold();
     }
 
+    /// Used internally for common assignment. Sets the members and counts
+    LazyPtr &copy_assign(RefCtr *p_ctr) {
+        p_ctr->lazy_hold();
+        m_p_ctr->lazy_release();
+        m_p_ctr = p_ctr;
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr) {
+        m_p_ctr->lazy_release();
+        m_p_ctr = p_ctr;
+    }
+
   public:
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
@@ -125,19 +139,13 @@ template <class T> class LazyPtr
 
     // LazyPtr<T> &
     LazyPtr &operator=(const LazyPtr<T> &other) {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     // LazyPtr<T> &&
     LazyPtr &operator=(LazyPtr<T> &&other) {
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
+        move_assign(other.m_p_ctr);
         other.move_from();
-
         return *this;
     }
 
@@ -146,11 +154,7 @@ template <class T> class LazyPtr
     LazyPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     // LazyPtr<O> &&
@@ -158,10 +162,8 @@ template <class T> class LazyPtr
     LazyPtr &operator=(LazyPtr<O> &&other)
         requires PointerCastable<T, O>
     {
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
+        move_assign(other.m_p_ctr);
         other.move_from();
-
         return *this;
     }
 
@@ -169,11 +171,7 @@ template <class T> class LazyPtr
 
     // FirmPtr<T> &
     LazyPtr &operator=(const FirmPtr<T> &other) {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     // FirmPtr<O> &
@@ -181,11 +179,7 @@ template <class T> class LazyPtr
     LazyPtr &operator=(const FirmPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->lazy_hold();
-        m_p_ctr->lazy_release();
-        m_p_ctr = other.m_p_ctr;
-
-        return *this;
+        return copy_assign(other.m_p_ctr);
     }
 
     /**
@@ -248,6 +242,38 @@ template <class T> class FirmPtr
     void move_from() {
         m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    FirmPtr &copy_assign(RefCtr *p_ctr, T *p_object) {
+        p_ctr->hold();
+        m_p_ctr->release();
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    FirmPtr &copy_assign(RefCtr *p_ctr) {
+        p_ctr->hold();
+        m_p_ctr->release();
+        m_p_ctr = p_ctr;
+        m_p_object = p_ctr->p_get();
+        return *this;
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr, T *p_object) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_object;
+        p_ctr->hold();
+    }
+
+    /// Used internally for common assignment. Sets the members and counts
+    void move_assign(RefCtr *p_ctr) {
+        m_p_ctr = p_ctr;
+        m_p_object = p_ctr->p_get();
+        p_ctr->hold();
     }
 
   public:
@@ -329,46 +355,28 @@ template <class T> class FirmPtr
 
     // const FirmPtr<O> &
     FirmPtr &operator=(const FirmPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
         requires PointerNoCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
-        return *this;
+        return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_object));
     }
 
     // FirmPtr<O> &&
     FirmPtr &operator=(FirmPtr<T> &&other) {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -376,12 +384,8 @@ template <class T> class FirmPtr
     FirmPtr &operator=(FirmPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = other.m_p_object;
-
+        move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
-
         return *this;
     }
 
@@ -389,12 +393,9 @@ template <class T> class FirmPtr
     FirmPtr &operator=(FirmPtr<O> &&other)
         requires PointerDynamicCastNeeded<O, T>
     {
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-
+        move_assign(other.m_p_ctr,
+                    internal::assume_dynamic_cast<T *>(other.m_p_object));
         other.move_from();
-
         return *this;
     }
 
@@ -402,12 +403,8 @@ template <class T> class FirmPtr
 
     // LazyPtr&<T> &
     FirmPtr &operator=(const LazyPtr<T> &other) {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(m_p_ctr->p_get());
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_ctr->p_get()));
     }
 
     // LazyPtr&<O> &
@@ -415,12 +412,8 @@ template <class T> class FirmPtr
     FirmPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        other.m_p_ctr->hold();
-        m_p_ctr->release();
-        m_p_ctr = other.m_p_ctr;
-        m_p_object = internal::assume_dynamic_cast<T *>(m_p_ctr->p_get());
-
-        return *this;
+        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
+                                              other.m_p_ctr->p_get()));
     }
 
     // Comparison operators
