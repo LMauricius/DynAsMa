@@ -36,6 +36,12 @@ template <class T> class PinPtr {
         p_ctr->hold();
     }
 
+    /// Used internally for making it into 'moved from' state
+    void move_from() {
+        m_p_ctr = &internal::NULL_REF_CTR;
+        internal::NULL_REF_CTR.hold();
+    }
+
   public:
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
@@ -69,16 +75,14 @@ template <class T> class PinPtr {
     // PinPtr<O> &&
     PinPtr(PinPtr<T> &&other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O>
     PinPtr(PinPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O>
@@ -86,8 +90,7 @@ template <class T> class PinPtr {
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_dynamic_cast<T *>(other.m_p_object)) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     // Copy & move constructors for subobjects
@@ -116,16 +119,14 @@ template <class T> class PinPtr {
     template <class M>
     PinPtr(PinPtr<M> &&other, T &subobject)
         : m_p_ctr(other.m_p_ctr), m_p_object(&subobject) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O, class M>
     PinPtr(PinPtr<M> &&other, O &subobject)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(&subobject) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O, class M>
@@ -133,8 +134,7 @@ template <class T> class PinPtr {
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_dynamic_cast<T *>(&subobject)) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     // Copy & move constructor for FirmPtr
@@ -162,16 +162,14 @@ template <class T> class PinPtr {
     // FirmPtr<O> &&
     PinPtr(FirmPtr<T> &&other)
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O>
     PinPtr(FirmPtr<O> &&other)
         requires PointerNoCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     template <class O>
@@ -179,8 +177,7 @@ template <class T> class PinPtr {
         requires PointerDynamicCastNeeded<O, T>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_dynamic_cast<T *>(other.m_p_object)) {
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
     }
 
     // Destructor
@@ -228,8 +225,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -241,8 +237,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -254,8 +249,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -301,8 +295,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -314,8 +307,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = other.m_p_object;
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -327,8 +319,7 @@ template <class T> class PinPtr {
         m_p_ctr->release();
         m_p_ctr = other.m_p_ctr;
         m_p_object = internal::assume_dynamic_cast<T *>(other.m_p_object);
-        other.m_p_ctr = &internal::NULL_REF_CTR;
-        internal::NULL_REF_CTR.hold();
+        other.move_from();
 
         return *this;
     }
@@ -374,8 +365,7 @@ PinPtr<To> static_pointer_cast(const PinPtr<From> &from) {
 template <class To, class From>
 PinPtr<To> static_pointer_cast(PinPtr<From> &&from) {
     auto ret = PinPtr<To>(*from.m_p_ctr, static_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
@@ -388,8 +378,7 @@ template <class To, class From>
 PinPtr<To> dynamic_pointer_cast(PinPtr<From> &&from) {
     // we cast the reference, not a pointer, so it throws on errors
     auto ret = PinPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
@@ -400,8 +389,7 @@ PinPtr<To> const_pointer_cast(const PinPtr<From> &from) {
 template <class To, class From>
 PinPtr<To> const_pointer_cast(PinPtr<From> &&from) {
     auto ret = PinPtr<To>(*from.m_p_ctr, const_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 template <class To, class From>
@@ -413,8 +401,7 @@ template <class To, class From>
 PinPtr<To> reinterpret_pointer_cast(PinPtr<From> &&from) {
     auto ret =
         PinPtr<To>(*from.m_p_ctr, reinterpret_cast<To *>(from.m_p_object));
-    from.m_p_ctr = &internal::NULL_REF_CTR;
-    internal::NULL_REF_CTR.hold();
+    from.move_from();
     return ret;
 }
 
