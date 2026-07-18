@@ -395,15 +395,18 @@ FirmPtr<To> static_pointer_cast(FirmPtr<From> &&from) {
 }
 template <class To, class From>
 FirmPtr<To> dynamic_pointer_cast(const FirmPtr<From> &from) {
-    from.m_p_ctr->hold();
     // we cast the reference, not a pointer, so it throws on errors
-    return FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
+    auto &castref = dynamic_cast<To &>(*from.m_p_object);
+
+    from.m_p_ctr->hold();
+    return FirmPtr<To>(*from.m_p_ctr, &castref);
 }
 template <class To, class From>
 FirmPtr<To> dynamic_pointer_cast(FirmPtr<From> &&from) {
     // we cast the reference, not a pointer, so it throws on errors
-    auto ret =
-        FirmPtr<To>(*from.m_p_ctr, &dynamic_cast<To &>(*from.m_p_object));
+    auto &castref = dynamic_cast<To &>(*from.m_p_object);
+
+    auto ret = FirmPtr<To>(*from.m_p_ctr, &castref);
     from.move_from();
     return ret;
 }
