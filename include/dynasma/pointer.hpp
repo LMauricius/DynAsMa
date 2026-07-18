@@ -239,14 +239,6 @@ template <class T> class FirmPtr
     void move_assign(RefCtr *p_ctr, T *p_object) {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
-        p_ctr->hold();
-    }
-
-    /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr) {
-        m_p_ctr = p_ctr;
-        m_p_object = p_ctr->p_get();
-        p_ctr->hold();
     }
 
   public:
@@ -346,8 +338,7 @@ template <class T> class FirmPtr
     FirmPtr &operator=(const LazyPtr<O> &other)
         requires PointerCastable<T, O>
     {
-        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
-                                              other.m_p_ctr->p_get()));
+        return copy_assign(other.m_p_ctr);
     }
 
     // Comparison operators
