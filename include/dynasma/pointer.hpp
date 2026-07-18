@@ -30,6 +30,7 @@ template <class T> class LazyPtr
 
     template <class O> friend class LazyPtr;
     template <class O> friend class FirmPtr;
+    template <class O> friend class PinPtr;
     friend class OptionalPtrBase<LazyPtr<T>>;
 
     RefCtr *m_p_ctr;
@@ -249,6 +250,11 @@ template <class T> class FirmPtr
         m_p_object = internal::assume_dynamic_cast<T *>(ctr.p_get());
     }
 
+    /// Internal constructor for managers
+    /// The ctr must produce instances derived from T, otherwise causes U.B.
+    /// @warning Doesn't increase the reference count, must be done manually
+    FirmPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {}
+
     // Constructor for casting raw pointers to ConvertibleToPtr objects
     template <class O>
     FirmPtr(O *p_object)
@@ -267,7 +273,7 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr(const FirmPtr<O> &other)
-        requires PointerCastable<O, T>
+        requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr,
                           internal::assume_convert<T>(other.m_p_object));
@@ -281,7 +287,7 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr(FirmPtr<O> &&other)
-        requires PointerCastable<O, T>
+        requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_convert<T>(other.m_p_object)) {
         other.move_from();
@@ -308,7 +314,7 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
-        requires PointerCastable<O, T>
+        requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr,
                            internal::assume_convert<T>(other.m_p_object));
@@ -323,7 +329,7 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr &operator=(FirmPtr<O> &&other)
-        requires PointerCastable<O, T>
+        requires PointerCastable<T, O>
     {
         move_assign(other.m_p_ctr,
                     internal::assume_convert<T>(other.m_p_object));
