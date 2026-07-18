@@ -186,7 +186,10 @@ template <class T> class LazyPtr
      * @brief Ensures the object is loaded before storing it into a FirmPtr
      * @returns a FirmPtr to the object
      */
-    FirmPtr<T> getLoaded() const { return FirmPtr<T>(*m_p_ctr); }
+    FirmPtr<T> getLoaded() const {
+        m_p_ctr->hold();
+        return FirmPtr<T>(*m_p_ctr);
+    }
 
     // Comparison operators
 
