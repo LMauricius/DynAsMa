@@ -14,28 +14,6 @@
 
 namespace dynasma {
 
-template <class To, class From>
-concept PointerCastable =
-    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class From, class To>
-concept PointerNoCastNeeded =
-    std::same_as<std::remove_cv_t<std::decay_t<From>>,
-                 std::remove_cv_t<std::decay_t<To>>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class From, class To>
-concept PointerDynamicCastNeeded =
-    !std::same_as<std::remove_cv_t<std::decay_t<From>>,
-                  std::remove_cv_t<std::decay_t<To>>> &&
-    std::derived_from<std::decay_t<From>, std::decay_t<To>> &&
-    MoreOrEquallyCVQualified<To, From>;
-
-template <class To, class From>
-concept RawPointerCastable =
-    PointerCastable<To, From> && RawConvertibleToPtr<From>;
-
 template <class T> class FirmPtr;
 template <class PtrT> class OptionalPtrBase;
 
@@ -305,17 +283,10 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr(const FirmPtr<O> &other)
-        requires PointerNoCastNeeded<O, T>
-    {
-        initialize_n_hold(other.m_p_ctr, other.m_p_object);
-    }
-
-    template <class O>
-    FirmPtr(const FirmPtr<O> &other)
-        requires PointerDynamicCastNeeded<O, T>
+        requires PointerCastable<O, T>
     {
         initialize_n_hold(other.m_p_ctr,
-                          internal::assume_dynamic_cast<T *>(other.m_p_object));
+                          internal::assume_convert<T>(other.m_p_object));
     }
 
     // FirmPtr<O> &&
@@ -326,16 +297,9 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr(FirmPtr<O> &&other)
-        requires PointerNoCastNeeded<O, T>
-        : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
-        other.move_from();
-    }
-
-    template <class O>
-    FirmPtr(FirmPtr<O> &&other)
-        requires PointerDynamicCastNeeded<O, T>
+        requires PointerCastable<O, T>
         : m_p_ctr(other.m_p_ctr),
-          m_p_object(internal::assume_dynamic_cast<T *>(other.m_p_object)) {
+          m_p_object(internal::assume_convert<T>(other.m_p_object)) {
         other.move_from();
     }
 
@@ -363,17 +327,10 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr &operator=(const FirmPtr<O> &other)
-        requires PointerNoCastNeeded<O, T>
+        requires PointerCastable<O, T>
     {
-        return copy_assign(other.m_p_ctr, other.m_p_object);
-    }
-
-    template <class O>
-    FirmPtr &operator=(const FirmPtr<O> &other)
-        requires PointerDynamicCastNeeded<O, T>
-    {
-        return copy_assign(other.m_p_ctr, internal::assume_dynamic_cast<T *>(
-                                              other.m_p_object));
+        return copy_assign(other.m_p_ctr,
+                           internal::assume_convert<T>(other.m_p_object));
     }
 
     // FirmPtr<O> &&
@@ -385,19 +342,10 @@ template <class T> class FirmPtr
 
     template <class O>
     FirmPtr &operator=(FirmPtr<O> &&other)
-        requires PointerNoCastNeeded<O, T>
-    {
-        move_assign(other.m_p_ctr, other.m_p_object);
-        other.move_from();
-        return *this;
-    }
-
-    template <class O>
-    FirmPtr &operator=(FirmPtr<O> &&other)
-        requires PointerDynamicCastNeeded<O, T>
+        requires PointerCastable<O, T>
     {
         move_assign(other.m_p_ctr,
-                    internal::assume_dynamic_cast<T *>(other.m_p_object));
+                    internal::assume_convert<T>(other.m_p_object));
         other.move_from();
         return *this;
     }
