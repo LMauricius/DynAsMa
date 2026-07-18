@@ -24,7 +24,11 @@ void constructObject(T *p, Ctr &ctr, ArgTs &&...args)
     new (p) T(&ctr, std::forward<ArgTs>(args)...);
 }
 
-template <class T> void destroyObject(T *p) { p->~T(); }
+template <class T> void destroyObject(T *p) {
+    static_assert(std::is_nothrow_destructible_v<T>,
+                  "asset destructors must not throw");
+    p->~T();
+}
 
 } // namespace dynasma
 

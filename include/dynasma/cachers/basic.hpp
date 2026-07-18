@@ -46,19 +46,25 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
                 // create new
                 ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
+
+                // construct (may throw)
+                try {
+                    std::visit(
+                        [p_asset, this](const auto &arg) {
+                            constructObject(p_asset, *this, arg);
+                        },
+                        seed.kernel);
+                } catch (...) {
+                    m_manager.m_allocator.deallocate(p_asset, 1);
+                    throw;
+                }
+
                 this->p_obj = p_asset;
 
                 // move from unloaded to used
                 this->m_manager.m_used_registry.splice(
                     this->m_manager.m_used_registry.end(),
                     this->m_manager.m_unloaded_registry, m_it);
-
-                // construct (may throw)
-                std::visit(
-                    [p_asset, this](const auto &arg) {
-                        constructObject(p_asset, *this, arg);
-                    },
-                    seed.kernel);
             } else {
                 // move from cached to used
                 this->m_manager.m_used_registry.splice(

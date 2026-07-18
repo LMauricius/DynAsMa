@@ -42,7 +42,12 @@ template <class T> class ReferenceCounter {
     void hold() {
         if (is_unloadable()) {
             m_firmcount++;
-            handle_usable_impl();
+            try {
+                handle_usable_impl();
+            } catch (...) {
+                m_firmcount--;
+                throw;
+            }
         } else {
             m_firmcount++;
         }

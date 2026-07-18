@@ -41,14 +41,23 @@ class BasicManager : public virtual AbstractManager<Seed> {
       protected:
         void handle_usable_impl() override {
             if (!this->is_loaded()) {
+
                 // create new
                 ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
+
+                // construct (may throw)
+                try {
+                    std::visit(
+                        [p_asset, this](const auto &arg) {
+                            constructObject(p_asset, *this, arg);
+                        },
+                        this->m_seed.kernel);
+                } catch (...) {
+                    m_manager.m_allocator.deallocate(p_asset, 1);
+                    throw;
+                }
+
                 this->p_obj = p_asset;
-                std::visit(
-                    [p_asset, this](const auto &arg) {
-                        constructObject(p_asset, *this, arg);
-                    },
-                    this->m_seed.kernel);
 
                 // move from unloaded to used
                 this->m_manager.m_used_registry.splice(

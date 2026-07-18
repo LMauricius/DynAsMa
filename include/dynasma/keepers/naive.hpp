@@ -45,12 +45,17 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
         ProxyRefCtr(const Seed &seed, NaiveKeeper &manager)
             : m_manager(manager) {
             ConstructedAsset *p_asset = m_manager.m_allocator.allocate(1);
+            try {
+                std::visit(
+                    [p_asset, this](const auto &arg) {
+                        constructObject(p_asset, *this, arg);
+                    },
+                    seed.kernel);
+            } catch (...) {
+                m_manager.m_allocator.deallocate(p_asset, 1);
+                throw;
+            }
             this->p_obj = p_asset;
-            std::visit(
-                [p_asset, this](const auto &arg) {
-                    constructObject(p_asset, *this, arg);
-                },
-                seed.kernel);
         }
         ~ProxyRefCtr() {
             ConstructedAsset &asset_casted =
