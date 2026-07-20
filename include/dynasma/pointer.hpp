@@ -21,8 +21,7 @@ template <class PtrT> class OptionalPtrBase;
  * @brief A lazy reference to an object. Doesn't ensure the object is loaded.
  * @note must be cast to a FirmPtr to access the object.
  */
-template <class T> class LazyPtr
-{
+template <class T> class LazyPtr {
     friend std::hash<LazyPtr>;
 
     // type-erased reference counter.
@@ -36,19 +35,19 @@ template <class T> class LazyPtr
     RefCtr *m_p_ctr;
 
     /// Used internally for common initialization. Sets the members and counts
-    void initialize_n_hold(RefCtr *p_ctr) {
+    void initialize_n_hold(RefCtr *p_ctr) noexcept {
         m_p_ctr = p_ctr;
         p_ctr->lazy_hold();
     }
 
     /// Used internally for making it into 'moved from' state
-    void move_from() {
+    void move_from() noexcept {
         m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.lazy_hold();
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    LazyPtr &copy_assign(RefCtr *p_ctr) {
+    LazyPtr &copy_assign(RefCtr *p_ctr) noexcept {
         p_ctr->lazy_hold();
         m_p_ctr->lazy_release();
         m_p_ctr = p_ctr;
@@ -56,7 +55,7 @@ template <class T> class LazyPtr
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr) {
+    void move_assign(RefCtr *p_ctr) noexcept {
         m_p_ctr->lazy_release();
         m_p_ctr = p_ctr;
     }
@@ -65,11 +64,11 @@ template <class T> class LazyPtr
     // Internal constructor for managers
     // The ctr must produce instances derived from T, otherwise causes U.B.
     /// @warning Doesn't increase the reference count, must be done manually
-    LazyPtr(RefCtr &ctr) : m_p_ctr(&ctr) {}
+    LazyPtr(RefCtr &ctr) noexcept : m_p_ctr(&ctr) {}
 
     // Constructor for casting raw pointers to ConvertibleToPtr objects
     template <class O>
-    LazyPtr(O *p_object)
+    LazyPtr(O *p_object) noexcept
         requires RawPointerCastable<T, O>
         : m_p_ctr(p_object->m_p_counter) {
         m_p_ctr->lazy_hold();
@@ -78,14 +77,18 @@ template <class T> class LazyPtr
     // Copy & Move constructors for LazyPtr
 
     // LazyPtr<T> &
-    LazyPtr(const LazyPtr<T> &other) { initialize_n_hold(other.m_p_ctr); }
+    LazyPtr(const LazyPtr<T> &other) noexcept {
+        initialize_n_hold(other.m_p_ctr);
+    }
 
     // LazyPtr<T> &&
-    LazyPtr(LazyPtr<T> &&other) : m_p_ctr(other.m_p_ctr) { other.move_from(); }
+    LazyPtr(LazyPtr<T> &&other) noexcept : m_p_ctr(other.m_p_ctr) {
+        other.move_from();
+    }
 
     // LazyPtr<O> &
     template <class O>
-    LazyPtr(const LazyPtr<O> &other)
+    LazyPtr(const LazyPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr);
@@ -93,7 +96,7 @@ template <class T> class LazyPtr
 
     // LazyPtr<O> &&
     template <class O>
-    LazyPtr(LazyPtr<O> &&other)
+    LazyPtr(LazyPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr) {
         other.move_from();
@@ -103,7 +106,7 @@ template <class T> class LazyPtr
 
     // FirmPtr<O> &
     template <class O>
-    LazyPtr(const FirmPtr<O> &other)
+    LazyPtr(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr);
@@ -114,12 +117,12 @@ template <class T> class LazyPtr
     // Copy & Move assignment for LazyPtr
 
     // LazyPtr<T> &
-    LazyPtr &operator=(const LazyPtr<T> &other) {
+    LazyPtr &operator=(const LazyPtr<T> &other) noexcept {
         return copy_assign(other.m_p_ctr);
     }
 
     // LazyPtr<T> &&
-    LazyPtr &operator=(LazyPtr<T> &&other) {
+    LazyPtr &operator=(LazyPtr<T> &&other) noexcept {
         move_assign(other.m_p_ctr);
         other.move_from();
         return *this;
@@ -127,7 +130,7 @@ template <class T> class LazyPtr
 
     // LazyPtr<O> &
     template <class O>
-    LazyPtr &operator=(const LazyPtr<O> &other)
+    LazyPtr &operator=(const LazyPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr);
@@ -135,7 +138,7 @@ template <class T> class LazyPtr
 
     // LazyPtr<O> &&
     template <class O>
-    LazyPtr &operator=(LazyPtr<O> &&other)
+    LazyPtr &operator=(LazyPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
         move_assign(other.m_p_ctr);
@@ -147,7 +150,7 @@ template <class T> class LazyPtr
 
     // FirmPtr<O> &
     template <class O>
-    LazyPtr &operator=(const FirmPtr<O> &other)
+    LazyPtr &operator=(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr);
@@ -164,17 +167,19 @@ template <class T> class LazyPtr
 
     // Comparison operators
 
-    template <class O> bool operator==(const LazyPtr<O> &other) const {
+    template <class O> bool operator==(const LazyPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> auto operator<=>(const LazyPtr<O> &other) const {
+    template <class O>
+    auto operator<=>(const LazyPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
-    template <class O> bool operator==(const FirmPtr<O> &other) const {
+    template <class O> bool operator==(const FirmPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> auto operator<=>(const FirmPtr<O> &other) const {
+    template <class O>
+    auto operator<=>(const FirmPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 };
@@ -183,8 +188,7 @@ template <class T> class LazyPtr
  * @brief A firm reference to an object. Ensures the object is loaded.
  * @note Can be used like a pointer to the object.
  */
-template <class T> class FirmPtr
-{
+template <class T> class FirmPtr {
     friend std::hash<FirmPtr>;
 
     // type-erased reference counter.
@@ -199,7 +203,7 @@ template <class T> class FirmPtr
     T *m_p_object;
 
     /// Used internally for common initialization. Sets the members and counts
-    void initialize_n_hold(RefCtr *p_ctr, T *p_object) {
+    void initialize_n_hold(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
         p_ctr->hold();
@@ -213,13 +217,13 @@ template <class T> class FirmPtr
     }
 
     /// Used internally for making it into 'moved from' state
-    void move_from() {
+    void move_from() noexcept {
         m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    FirmPtr &copy_assign(RefCtr *p_ctr, T *p_object) {
+    FirmPtr &copy_assign(RefCtr *p_ctr, T *p_object) noexcept {
         p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = p_ctr;
@@ -237,7 +241,7 @@ template <class T> class FirmPtr
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr, T *p_object) {
+    void move_assign(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
     }
@@ -246,14 +250,15 @@ template <class T> class FirmPtr
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
     /// @warning Doesn't increase the reference count, must be done manually
-    FirmPtr(RefCtr &ctr) : m_p_ctr(&ctr) {
+    FirmPtr(RefCtr &ctr) noexcept : m_p_ctr(&ctr) {
         m_p_object = internal::assume_dynamic_cast<T *>(ctr.p_get());
     }
 
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
     /// @warning Doesn't increase the reference count, must be done manually
-    FirmPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {}
+    FirmPtr(RefCtr &ctr, T *p_object) noexcept
+        : m_p_ctr(&ctr), m_p_object(p_object) {}
 
     // Constructor for casting raw pointers to ConvertibleToPtr objects
     template <class O>
@@ -267,12 +272,12 @@ template <class T> class FirmPtr
     // Copy & move constructors for FirmPtr
 
     // const FirmPtr<O> &
-    FirmPtr(const FirmPtr<T> &other) {
+    FirmPtr(const FirmPtr<T> &other) noexcept {
         initialize_n_hold(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
-    FirmPtr(const FirmPtr<O> &other)
+    FirmPtr(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr,
@@ -280,13 +285,13 @@ template <class T> class FirmPtr
     }
 
     // FirmPtr<O> &&
-    FirmPtr(FirmPtr<T> &&other)
+    FirmPtr(FirmPtr<T> &&other) noexcept
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.move_from();
     }
 
     template <class O>
-    FirmPtr(FirmPtr<O> &&other)
+    FirmPtr(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_convert<T>(other.m_p_object)) {
@@ -308,12 +313,12 @@ template <class T> class FirmPtr
     // copy & move assignment for FirmPtr
 
     // const FirmPtr<O> &
-    FirmPtr &operator=(const FirmPtr<T> &other) {
+    FirmPtr &operator=(const FirmPtr<T> &other) noexcept {
         return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
-    FirmPtr &operator=(const FirmPtr<O> &other)
+    FirmPtr &operator=(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr,
@@ -321,14 +326,14 @@ template <class T> class FirmPtr
     }
 
     // FirmPtr<O> &&
-    FirmPtr &operator=(FirmPtr<T> &&other) {
+    FirmPtr &operator=(FirmPtr<T> &&other) noexcept {
         move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
         return *this;
     }
 
     template <class O>
-    FirmPtr &operator=(FirmPtr<O> &&other)
+    FirmPtr &operator=(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
         move_assign(other.m_p_ctr,
@@ -349,24 +354,26 @@ template <class T> class FirmPtr
 
     // Comparison operators
 
-    template <class O> bool operator==(const FirmPtr<O> &other) const {
+    template <class O> bool operator==(const FirmPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> auto operator<=>(const FirmPtr<O> &other) const {
+    template <class O>
+    auto operator<=>(const FirmPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
-    template <class O> bool operator==(const LazyPtr<O> &other) const {
+    template <class O> bool operator==(const LazyPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr == (void *)other.m_p_ctr;
     }
-    template <class O> auto operator<=>(const LazyPtr<O> &other) const {
+    template <class O>
+    auto operator<=>(const LazyPtr<O> &other) const noexcept {
         return (void *)this->m_p_ctr <=> (void *)other.m_p_ctr;
     }
 
     // Dereferencing
 
-    T &operator*() const { return *m_p_object; }
-    T *operator->() const { return m_p_object; }
+    T &operator*() const noexcept { return *m_p_object; }
+    T *operator->() const noexcept { return m_p_object; }
 
     // Pointer casting functions
 
@@ -443,11 +450,11 @@ FirmPtr<To> reinterpret_pointer_cast(FirmPtr<From> &&from) {
 } // namespace dynasma
 
 // Specializations
-namespace std
-{
-template <class T> struct hash<dynasma::LazyPtr<T>>
-{
-    size_t operator()(const dynasma::LazyPtr<T> &x) const { return (size_t)x.m_p_ctr; }
+namespace std {
+template <class T> struct hash<dynasma::LazyPtr<T>> {
+    size_t operator()(const dynasma::LazyPtr<T> &x) const noexcept {
+        return (size_t)x.m_p_ctr;
+    }
 };
 
 template <class T>
@@ -468,7 +475,7 @@ class optional<dynasma::LazyPtr<T>>
 };
 
 template <class T> struct hash<dynasma::FirmPtr<T>> {
-    size_t operator()(const dynasma::FirmPtr<T> &x) const {
+    size_t operator()(const dynasma::FirmPtr<T> &x) const noexcept {
         return (size_t)x.m_p_ctr;
     }
 };

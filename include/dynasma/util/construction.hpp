@@ -24,7 +24,7 @@ void constructObject(T *p, Ctr &ctr, ArgTs &&...args)
     new (p) T(&ctr, std::forward<ArgTs>(args)...);
 }
 
-template <class T> void destroyObject(T *p) {
+template <class T> void destroyObject(T *p) noexcept {
     static_assert(std::is_nothrow_destructible_v<T>,
                   "asset destructors must not throw");
     p->~T();

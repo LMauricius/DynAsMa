@@ -70,13 +70,13 @@ class BasicManager : public virtual AbstractManager<Seed> {
                     this->m_manager.m_cached_registry, m_it);
             }
         }
-        void handle_unloadable_impl() override {
+        void handle_unloadable_impl() noexcept override {
             // move from used to cached
             this->m_manager.m_cached_registry.splice(
                 this->m_manager.m_cached_registry.end(),
                 this->m_manager.m_used_registry, m_it);
         }
-        void handle_forgettable_impl() override {
+        void handle_forgettable_impl() noexcept override {
             if (this->is_loaded()) {
                 this->unload();
             }
@@ -93,7 +93,7 @@ class BasicManager : public virtual AbstractManager<Seed> {
          *
          * @throws None
          */
-        void unload() {
+        void unload() noexcept {
             // unload
             ConstructedAsset &asset_casted =
                 *dynamic_cast<ConstructedAsset *>(this->p_obj);
@@ -108,7 +108,7 @@ class BasicManager : public virtual AbstractManager<Seed> {
         }
 
         void setSelfRegistryPos(std::list<ProxyRefCtr> *p_cur_list,
-                                std::list<ProxyRefCtr>::iterator it) {
+                                std::list<ProxyRefCtr>::iterator it) noexcept {
             m_it = it;
         }
     };
@@ -128,13 +128,12 @@ class BasicManager : public virtual AbstractManager<Seed> {
 
     BasicManager()
         requires std::default_initializable<Alloc>
-        : m_allocator(){};
+        : m_allocator() {};
     BasicManager(const Alloc &a) : m_allocator(a) {}
     BasicManager(Alloc &&a) : m_allocator(std::move(a)) {}
-    ~BasicManager()
-    {
-        assert(m_unloaded_registry.size() == 0 && m_cached_registry.size() == 0 &&
-               m_used_registry.size() == 0);
+    ~BasicManager() {
+        assert(m_unloaded_registry.size() == 0 &&
+               m_cached_registry.size() == 0 && m_used_registry.size() == 0);
     }
 
     using AbstractManager<Seed>::register_asset;
@@ -147,8 +146,7 @@ class BasicManager : public virtual AbstractManager<Seed> {
         ctr.lazy_hold();
         return LazyPtr<ExposedAsset>(ctr);
     }
-    std::size_t clean(std::size_t bytenum) override
-    {
+    std::size_t clean(std::size_t bytenum) override {
         /*
         Unloads the oldest unloadable assets first
         */

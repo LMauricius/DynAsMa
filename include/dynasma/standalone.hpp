@@ -13,8 +13,8 @@ template <StandardPolymorphic T>
 class StandaloneRefCtr : public PolymorphicReferenceCounter {
   protected:
     void handle_usable_impl() override {}
-    void handle_unloadable_impl() override {}
-    void handle_forgettable_impl() override { delete this; }
+    void handle_unloadable_impl() noexcept override {}
+    void handle_forgettable_impl() noexcept override { delete this; }
 
     T m_obj;
 

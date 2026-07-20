@@ -55,14 +55,14 @@ class NaiveManager : public virtual AbstractManager<Seed> {
             }
             this->p_obj = p_asset;
         }
-        void handle_unloadable_impl() override {
+        void handle_unloadable_impl() noexcept override {
             ConstructedAsset &asset_casted =
                 *dynamic_cast<ConstructedAsset *>(this->p_obj);
             destroyObject(this->p_obj);
             m_manager.m_allocator.deallocate(&asset_casted, 1);
             this->p_obj = nullptr;
         }
-        void handle_forgettable_impl() override {
+        void handle_forgettable_impl() noexcept override {
             m_manager.m_seed_registry.erase(m_it); // deletes this
         }
 
@@ -70,7 +70,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
         ProxyRefCtr(Seed &&seed, NaiveManager &manager)
             : m_seed(seed), m_it(), m_manager(manager) {}
 
-        void setSelfRegistryPos(std::list<ProxyRefCtr>::iterator it) {
+        void setSelfRegistryPos(std::list<ProxyRefCtr>::iterator it) noexcept {
             m_it = it;
         }
     };
@@ -86,7 +86,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
 
     NaiveManager()
         requires std::default_initializable<Alloc>
-        : m_allocator(){};
+        : m_allocator() {};
     NaiveManager(const Alloc &a) : m_allocator(a) {}
     NaiveManager(Alloc &&a) : m_allocator(std::move(a)) {}
     ~NaiveManager() { assert(m_seed_registry.size() == 0); }
@@ -100,8 +100,7 @@ class NaiveManager : public virtual AbstractManager<Seed> {
         ctr.lazy_hold();
         return LazyPtr<ExposedAsset>(ctr);
     }
-    std::size_t clean(std::size_t bytenum) override
-    {
+    std::size_t clean(std::size_t bytenum) override {
         // do nothing; cleans itself automatically
         return 0;
     }

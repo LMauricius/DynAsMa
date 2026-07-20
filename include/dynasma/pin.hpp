@@ -30,7 +30,7 @@ template <class T> class PinPtr {
     T *m_p_object;
 
     /// Used internally for common initialization. Sets the members and counts
-    void initialize_n_hold(RefCtr *p_ctr, T *p_object) {
+    void initialize_n_hold(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
         p_ctr->hold();
@@ -44,13 +44,13 @@ template <class T> class PinPtr {
     }
 
     /// Used internally for making it into 'moved from' state
-    void move_from() {
+    void move_from() noexcept {
         m_p_ctr = &internal::NULL_REF_CTR;
         internal::NULL_REF_CTR.hold();
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    PinPtr &copy_assign(RefCtr *p_ctr, T *p_object) {
+    PinPtr &copy_assign(RefCtr *p_ctr, T *p_object) noexcept {
         p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = p_ctr;
@@ -68,7 +68,7 @@ template <class T> class PinPtr {
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr, T *p_object) {
+    void move_assign(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
     }
@@ -77,24 +77,25 @@ template <class T> class PinPtr {
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
     /// @warning Doesn't increase the reference count, must be done manually
-    PinPtr(RefCtr &ctr) : m_p_ctr(&ctr) {
+    PinPtr(RefCtr &ctr) noexcept : m_p_ctr(&ctr) {
         m_p_object = internal::assume_dynamic_cast<T *>(ctr.p_get());
     }
 
     /// Internal constructor for managers
     /// The ctr must produce instances derived from T, otherwise causes U.B.
     /// @warning Doesn't increase the reference count, must be done manually
-    PinPtr(RefCtr &ctr, T *p_object) : m_p_ctr(&ctr), m_p_object(p_object) {}
+    PinPtr(RefCtr &ctr, T *p_object) noexcept
+        : m_p_ctr(&ctr), m_p_object(p_object) {}
 
     // Copy & move constructors for PinPtr
 
     // const PinPtr<O> &
-    PinPtr(const PinPtr<T> &other) {
+    PinPtr(const PinPtr<T> &other) noexcept {
         initialize_n_hold(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
-    PinPtr(const PinPtr<O> &other)
+    PinPtr(const PinPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr,
@@ -102,13 +103,13 @@ template <class T> class PinPtr {
     }
 
     // PinPtr<O> &&
-    PinPtr(PinPtr<T> &&other)
+    PinPtr(PinPtr<T> &&other) noexcept
         : m_p_ctr(other.m_p_ctr), m_p_object(other.m_p_object) {
         other.move_from();
     }
 
     template <class O>
-    PinPtr(PinPtr<O> &&other)
+    PinPtr(PinPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_convert<T>(other.m_p_object)) {
@@ -118,12 +119,12 @@ template <class T> class PinPtr {
     // Copy & move constructors for subobjects
 
     // const PinPtr<O> &
-    template <class M> PinPtr(const PinPtr<M> &other, T &subobject) {
+    template <class M> PinPtr(const PinPtr<M> &other, T &subobject) noexcept {
         initialize_n_hold(other.m_p_ctr, &subobject);
     }
 
     template <class O, class M>
-    PinPtr(const PinPtr<M> &other, O &subobject)
+    PinPtr(const PinPtr<M> &other, O &subobject) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr,
@@ -132,13 +133,13 @@ template <class T> class PinPtr {
 
     // PinPtr<O> &&
     template <class M>
-    PinPtr(PinPtr<M> &&other, T &subobject)
+    PinPtr(PinPtr<M> &&other, T &subobject) noexcept
         : m_p_ctr(other.m_p_ctr), m_p_object(&subobject) {
         other.move_from();
     }
 
     template <class O, class M>
-    PinPtr(PinPtr<M> &&other, O &subobject)
+    PinPtr(PinPtr<M> &&other, O &subobject) noexcept
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_convert<T>(&subobject)) {
@@ -157,7 +158,7 @@ template <class T> class PinPtr {
     // Copy & move constructor for FirmPtr
 
     template <class O>
-    PinPtr(const FirmPtr<O> &other)
+    PinPtr(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         initialize_n_hold(other.m_p_ctr,
@@ -165,7 +166,7 @@ template <class T> class PinPtr {
     }
 
     template <class O>
-    PinPtr(FirmPtr<O> &&other)
+    PinPtr(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
         : m_p_ctr(other.m_p_ctr),
           m_p_object(internal::assume_convert<T>(other.m_p_object)) {
@@ -179,12 +180,12 @@ template <class T> class PinPtr {
     // copy & move assignment for PinPtr
 
     // const PinPtr<O> &
-    PinPtr &operator=(const PinPtr<T> &other) {
+    PinPtr &operator=(const PinPtr<T> &other) noexcept {
         return copy_assign(other.m_p_ctr, other.m_p_object);
     }
 
     template <class O>
-    PinPtr &operator=(const PinPtr<O> &other)
+    PinPtr &operator=(const PinPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr,
@@ -192,14 +193,14 @@ template <class T> class PinPtr {
     }
 
     // PinPtr<O> &&
-    PinPtr &operator=(PinPtr<T> &&other) {
+    PinPtr &operator=(PinPtr<T> &&other) noexcept {
         move_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
         return *this;
     }
 
     template <class O>
-    PinPtr &operator=(PinPtr<O> &&other)
+    PinPtr &operator=(PinPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
         move_assign(other.m_p_ctr,
@@ -222,7 +223,7 @@ template <class T> class PinPtr {
 
     // const FirmPtr<O> &
     template <class O>
-    PinPtr &operator=(const FirmPtr<O> &other)
+    PinPtr &operator=(const FirmPtr<O> &other) noexcept
         requires PointerCastable<T, O>
     {
         return copy_assign(other.m_p_ctr,
@@ -231,7 +232,7 @@ template <class T> class PinPtr {
 
     // FirmPtr<O> &&
     template <class O>
-    PinPtr &operator=(FirmPtr<O> &&other)
+    PinPtr &operator=(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
         move_assign(other.m_p_ctr,
@@ -241,17 +242,17 @@ template <class T> class PinPtr {
     }
 
     // Comparison operators
-    template <class O> bool operator==(const PinPtr<O> &other) const {
+    template <class O> bool operator==(const PinPtr<O> &other) const noexcept {
         return (void *)this->m_p_object == (void *)other.m_p_object;
     }
-    template <class O> auto operator<=>(const PinPtr<O> &other) const {
+    template <class O> auto operator<=>(const PinPtr<O> &other) const noexcept {
         return (void *)this->m_p_object <=> (void *)other.m_p_object;
     }
 
     // Dereferencing
 
-    T &operator*() const { return *m_p_object; }
-    T *operator->() const { return m_p_object; }
+    T &operator*() const noexcept { return *m_p_object; }
+    T *operator->() const noexcept { return m_p_object; }
 
     // Pointer casting functions
 
@@ -325,7 +326,7 @@ PinPtr<To> reinterpret_pointer_cast(PinPtr<From> &&from) {
 
 namespace std {
 template <class T> struct hash<dynasma::PinPtr<T>> {
-    size_t operator()(const dynasma::PinPtr<T> &x) const {
+    size_t operator()(const dynasma::PinPtr<T> &x) const noexcept {
         return (size_t)x.m_p_object;
     }
 };

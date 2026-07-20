@@ -22,17 +22,18 @@ template <class T> class ReferenceCounter {
      * @brief Allows unloading the asset
      * @note Called only on the switch from usable to unloadable
      */
-    virtual void handle_unloadable_impl() = 0;
+    virtual void handle_unloadable_impl() noexcept = 0;
     /**
      * @brief Allows `this` to be deleted
      * @note Called only on the switch from unloadable to forgettable
      * @note this instance should not be referenced after this call
      * @note this instance can be deleted by this function, or after calling it
      */
-    virtual void handle_forgettable_impl() = 0;
+    virtual void handle_forgettable_impl() noexcept = 0;
 
   public:
-    ReferenceCounter() : m_firmcount(0), m_lazycount(0), p_obj(nullptr) {};
+    ReferenceCounter() noexcept
+        : m_firmcount(0), m_lazycount(0), p_obj(nullptr) {};
     virtual ~ReferenceCounter() {};
 
     /**
@@ -56,7 +57,7 @@ template <class T> class ReferenceCounter {
      * @brief Reduces the firm reference count
      * @note If the count reaches 0, the asset can be unloaded
      */
-    void release() {
+    void release() noexcept {
         m_firmcount--;
         if (is_unloadable()) {
             handle_unloadable_impl();
@@ -69,17 +70,17 @@ template <class T> class ReferenceCounter {
      * @returns a pointer to the loaded asset or nullptr if the asset is
      * not loaded
      */
-    T *p_get() { return p_obj; }
+    T *p_get() noexcept { return p_obj; }
 
     /**
      * @brief Increases the lazy reference count
      */
-    void lazy_hold() { m_lazycount++; }
+    void lazy_hold() noexcept { m_lazycount++; }
     /**
      * @brief Reduces the lazy reference count
      * @note If the count reaches 0, this instance can be deleted
      */
-    void lazy_release() {
+    void lazy_release() noexcept {
         m_lazycount--;
         if (is_forgettable()) {
             handle_forgettable_impl();
@@ -90,27 +91,29 @@ template <class T> class ReferenceCounter {
      * Check if the counter object is usable.
      * @return true if the object is usable, false otherwise
      */
-    bool is_usable() const { return m_firmcount > 0; }
+    bool is_usable() const noexcept { return m_firmcount > 0; }
     /**
      * Check if the counter is unloadable. Also positive if it is forgettable
      * @return true if the object is unloadable, false otherwise
      */
-    bool is_unloadable() const { return m_firmcount == 0; }
+    bool is_unloadable() const noexcept { return m_firmcount == 0; }
     /**
      * Check if the counter is forgettable based on the reference counts.
      * @return true if the object is forgettable, false otherwise
      */
-    bool is_forgettable() const { return m_firmcount == 0 && m_lazycount == 0; }
+    bool is_forgettable() const noexcept {
+        return m_firmcount == 0 && m_lazycount == 0;
+    }
 
     /**
      * @returns whether the asset is loaded
      */
-    bool is_loaded() const { return p_obj != nullptr; }
+    bool is_loaded() const noexcept { return p_obj != nullptr; }
 
     /**
      * @returns whether the asset is loaded, but unloadable
      */
-    bool is_cached() const { return is_unloadable() && is_loaded(); }
+    bool is_cached() const noexcept { return is_unloadable() && is_loaded(); }
 
     /**
      * @enum CounterState
@@ -121,7 +124,7 @@ template <class T> class ReferenceCounter {
     /**
      * @return CounterState
      */
-    CounterState get_counter_state() const {
+    CounterState get_counter_state() const noexcept {
         if (is_forgettable()) {
             return CounterState::Forgettable;
         } else if (is_unloadable()) {
@@ -141,7 +144,7 @@ template <class T> class ReferenceCounter {
     /**
      * @return ObjectState
      */
-    ObjectState get_object_state() const {
+    ObjectState get_object_state() const noexcept {
         if (is_loaded()) {
             if (is_usable()) {
                 return ObjectState::Used;
@@ -163,8 +166,8 @@ namespace internal {
 class NullRefCtr : public PolymorphicReferenceCounter {
   protected:
     void handle_usable_impl() override {}
-    void handle_unloadable_impl() override {}
-    void handle_forgettable_impl() override {}
+    void handle_unloadable_impl() noexcept override {}
+    void handle_forgettable_impl() noexcept override {}
 
   public:
     NullRefCtr() {

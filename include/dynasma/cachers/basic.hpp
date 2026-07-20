@@ -72,13 +72,13 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
                     this->m_manager.m_cached_registry, m_it);
             }
         }
-        void handle_unloadable_impl() override {
+        void handle_unloadable_impl() noexcept override {
             // move from used to cached
             this->m_manager.m_cached_registry.splice(
                 this->m_manager.m_cached_registry.end(),
                 this->m_manager.m_used_registry, m_it);
         }
-        void handle_forgettable_impl() override {
+        void handle_forgettable_impl() noexcept override {
             if (!this->is_loaded()) {
                 forget();
             }
@@ -88,7 +88,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         /**
          * @note This must only be called when the asset is not loaded
          */
-        void forget() {
+        void forget() noexcept {
             m_manager.m_searchable_registry.erase(m_map_it); // removes the seed
             m_manager.m_unloaded_registry.erase(m_it);       // deletes this
         }
@@ -102,7 +102,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
          *
          * @throws None
          */
-        void unload() {
+        void unload() noexcept {
             // unload
             ConstructedAsset &asset_casted =
                 *dynamic_cast<ConstructedAsset *>(this->p_obj);
@@ -123,7 +123,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
         void setSelfRegistryPos(
             std::list<ProxyRefCtr> *p_cur_list,
             std::list<ProxyRefCtr>::iterator it,
-            std::map<Seed, ProxyRefCtr *const>::iterator map_it) {
+            std::map<Seed, ProxyRefCtr *const>::iterator map_it) noexcept {
             m_it = it;
             m_map_it = map_it;
         }
@@ -145,13 +145,12 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
 
     BasicCacher()
         requires std::default_initializable<Alloc>
-        : m_allocator(){};
+        : m_allocator() {};
     BasicCacher(const Alloc &a) : m_allocator(a) {}
     BasicCacher(Alloc &&a) : m_allocator(std::move(a)) {}
-    ~BasicCacher()
-    {
-        assert(m_unloaded_registry.size() == 0 && m_cached_registry.size() == 0 &&
-               m_used_registry.size() == 0);
+    ~BasicCacher() {
+        assert(m_unloaded_registry.size() == 0 &&
+               m_cached_registry.size() == 0 && m_used_registry.size() == 0);
     }
 
     using AbstractCacher<Seed>::retrieve_asset;
@@ -186,8 +185,7 @@ class BasicCacher : public virtual AbstractCacher<Seed> {
             return LazyPtr<ExposedAsset>(newCtr);
         }
     }
-    std::size_t clean(std::size_t bytenum) override
-    {
+    std::size_t clean(std::size_t bytenum) override {
         /*
         Unloads the oldest unloadable assets first
         */

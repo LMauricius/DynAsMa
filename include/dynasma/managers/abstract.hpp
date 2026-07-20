@@ -13,7 +13,7 @@ template <ReloadableSeedLike Seed> class AbstractManager : public AbstractPool {
   public:
     using Asset = typename Seed::Asset;
 
-    virtual ~AbstractManager(){};
+    virtual ~AbstractManager() {};
 
     /**
      * @brief Registers a seed for constructing an instance of Seed::Asset

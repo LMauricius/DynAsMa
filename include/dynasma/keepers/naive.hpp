@@ -38,8 +38,8 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
 
       protected:
         void handle_usable_impl() override {}
-        void handle_unloadable_impl() override {}
-        void handle_forgettable_impl() override { delete this; }
+        void handle_unloadable_impl() noexcept override {}
+        void handle_forgettable_impl() noexcept override { delete this; }
 
       public:
         ProxyRefCtr(const Seed &seed, NaiveKeeper &manager)
@@ -75,7 +75,7 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
 
     NaiveKeeper()
         requires std::default_initializable<Alloc>
-        : m_allocator(){};
+        : m_allocator() {};
     NaiveKeeper(const Alloc &a) : m_allocator(a) {}
     NaiveKeeper(Alloc &&a) : m_allocator(std::move(a)) {}
     ~NaiveKeeper() = default;
@@ -85,8 +85,7 @@ class NaiveKeeper : public virtual AbstractKeeper<Seed> {
         p_ctr->lazy_hold();
         return LazyPtr<ExposedAsset>(*p_ctr);
     }
-    std::size_t clean(std::size_t bytenum) override
-    {
+    std::size_t clean(std::size_t bytenum) override {
         // do nothing; cleans itself automatically
         return 0;
     }

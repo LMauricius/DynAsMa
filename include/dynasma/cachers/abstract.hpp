@@ -17,7 +17,7 @@ template <CacheableSeedLike Seed> class AbstractCacher : public AbstractPool {
   public:
     using Asset = typename Seed::Asset;
 
-    virtual ~AbstractCacher(){};
+    virtual ~AbstractCacher() {};
 
     /**
      * @brief Registers a seed for constructing an instance of Seed::Asset,
