@@ -5,8 +5,6 @@
 
 #include "dynasma/pointer.hpp"
 
-#include <type_traits>
-
 namespace dynasma {
 
 /**
@@ -39,8 +37,8 @@ template <class T> class PinPtr {
     /// Used internally for common initialization. Sets the members and counts
     void initialize_n_hold(RefCtr *p_ctr) {
         m_p_ctr = p_ctr;
-        m_p_object = p_ctr->p_get();
         p_ctr->hold();
+        m_p_object = internal::assume_dynamic_cast<T *>(p_ctr->p_get());
     }
 
     /// Used internally for making it into 'moved from' state
@@ -63,12 +61,12 @@ template <class T> class PinPtr {
         p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = p_ctr;
-        m_p_object = p_ctr->p_get();
+        m_p_object = internal::assume_dynamic_cast<T *>(p_ctr->p_get());
         return *this;
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr, T *p_object) noexcept {
+    void move_to_assign(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
     }
@@ -194,7 +192,7 @@ template <class T> class PinPtr {
 
     // PinPtr<O> &&
     PinPtr &operator=(PinPtr<T> &&other) noexcept {
-        move_assign(other.m_p_ctr, other.m_p_object);
+        move_to_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
         return *this;
     }
@@ -203,8 +201,8 @@ template <class T> class PinPtr {
     PinPtr &operator=(PinPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
-        move_assign(other.m_p_ctr,
-                    internal::assume_convert<T>(other.m_p_object));
+        move_to_assign(other.m_p_ctr,
+                       internal::assume_convert<T>(other.m_p_object));
         other.move_from();
         return *this;
     }
@@ -235,8 +233,8 @@ template <class T> class PinPtr {
     PinPtr &operator=(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
-        move_assign(other.m_p_ctr,
-                    internal::assume_convert<T>(other.m_p_object));
+        move_to_assign(other.m_p_ctr,
+                       internal::assume_convert<T>(other.m_p_object));
         other.move_from();
         return *this;
     }

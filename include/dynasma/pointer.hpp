@@ -2,7 +2,6 @@
 #ifndef INCLUDED_DYNASMA_POINTER_H
 #define INCLUDED_DYNASMA_POINTER_H
 
-#include "dynasma/core_concepts.hpp"
 #include "dynasma/util/cast.hpp"
 #include "dynasma/util/dynamic_typing.hpp"
 #include "dynasma/util/optional.hpp"
@@ -10,7 +9,6 @@
 
 #include <functional>
 #include <optional>
-#include <type_traits>
 
 namespace dynasma {
 
@@ -55,7 +53,7 @@ template <class T> class LazyPtr {
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr) noexcept {
+    void move_to_assign(RefCtr *p_ctr) noexcept {
         m_p_ctr->lazy_release();
         m_p_ctr = p_ctr;
     }
@@ -123,7 +121,7 @@ template <class T> class LazyPtr {
 
     // LazyPtr<T> &&
     LazyPtr &operator=(LazyPtr<T> &&other) noexcept {
-        move_assign(other.m_p_ctr);
+        move_to_assign(other.m_p_ctr);
         other.move_from();
         return *this;
     }
@@ -141,7 +139,7 @@ template <class T> class LazyPtr {
     LazyPtr &operator=(LazyPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
-        move_assign(other.m_p_ctr);
+        move_to_assign(other.m_p_ctr);
         other.move_from();
         return *this;
     }
@@ -212,8 +210,8 @@ template <class T> class FirmPtr {
     /// Used internally for common initialization. Sets the members and counts
     void initialize_n_hold(RefCtr *p_ctr) {
         m_p_ctr = p_ctr;
-        m_p_object = p_ctr->p_get();
         p_ctr->hold();
+        m_p_object = internal::assume_dynamic_cast<T *>(p_ctr->p_get());
     }
 
     /// Used internally for making it into 'moved from' state
@@ -236,12 +234,12 @@ template <class T> class FirmPtr {
         p_ctr->hold();
         m_p_ctr->release();
         m_p_ctr = p_ctr;
-        m_p_object = p_ctr->p_get();
+        m_p_object = internal::assume_dynamic_cast<T *>(p_ctr->p_get());
         return *this;
     }
 
     /// Used internally for common assignment. Sets the members and counts
-    void move_assign(RefCtr *p_ctr, T *p_object) noexcept {
+    void move_to_assign(RefCtr *p_ctr, T *p_object) noexcept {
         m_p_ctr = p_ctr;
         m_p_object = p_object;
     }
@@ -327,7 +325,7 @@ template <class T> class FirmPtr {
 
     // FirmPtr<O> &&
     FirmPtr &operator=(FirmPtr<T> &&other) noexcept {
-        move_assign(other.m_p_ctr, other.m_p_object);
+        move_to_assign(other.m_p_ctr, other.m_p_object);
         other.move_from();
         return *this;
     }
@@ -336,8 +334,8 @@ template <class T> class FirmPtr {
     FirmPtr &operator=(FirmPtr<O> &&other) noexcept
         requires PointerCastable<T, O>
     {
-        move_assign(other.m_p_ctr,
-                    internal::assume_convert<T>(other.m_p_object));
+        move_to_assign(other.m_p_ctr,
+                       internal::assume_convert<T>(other.m_p_object));
         other.move_from();
         return *this;
     }
